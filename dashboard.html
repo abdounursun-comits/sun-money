@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sun Money Dashboard</title>
+
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:Arial,sans-serif;
+}
+
+body{
+    background:#f4f6f9;
+}
+
+header{
+    background:#ff9800;
+    color:white;
+    padding:15px;
+    text-align:center;
+    font-size:26px;
+    font-weight:bold;
+}
+
+nav{
+    background:white;
+    padding:15px;
+    display:flex;
+    justify-content:center;
+    gap:20px;
+    box-shadow:0 2px 5px rgba(0,0,0,.1);
+}
+
+nav a{
+    text-decoration:none;
+    color:#333;
+    font-weight:bold;
+}
+
+.container{
+    max-width:1200px;
+    margin:20px auto;
+    padding:15px;
+}
+
+.card{
+    background:white;
+    border-radius:12px;
+    padding:20px;
+    margin-bottom:20px;
+    box-shadow:0 0 10px rgba(0,0,0,.08);
+}
+
+.balance{
+    text-align:center;
+}
+
+.balance h2{
+    color:#28a745;
+    font-size:40px;
+    margin-top:10px;
+}
+
+.grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    gap:15px;
+}
+
+.stat{
+    background:white;
+    border-radius:10px;
+    padding:20px;
+    text-align:center;
+    box-shadow:0 0 10px rgba(0,0,0,.08);
+}
+
+.btn{
+    display:inline-block;
+    padding:10px 20px;
+    background:#ff9800;
+    color:white;
+    text-decoration:none;
+    border-radius:6px;
+    margin-right:10px;
+}
+
+.footer{
+    text-align:center;
+    padding:20px;
+    color:#666;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+💰 Sun Money Dashboard
+</header>
+
+<nav>
+    <a href="dashboard.html">Dashboard</a>
+    <a href="offer.html">Offers</a>
+    <a href="withdraw.html">Withdraw</a>
+    <a href="#" onclick="logout()">Logout</a>
+</nav>
+
+<div class="container">
+
+    <div class="card">
+        <h2>Welcome to Sun Money</h2>
+        <p>Complete CPA offers and earn money.</p>
+    </div>
+
+    <div class="card balance">
+        <h3>Current Balance</h3>
+        <h2>$<span id="balance">0.00</span></h2>
+    </div>
+
+    <div class="grid">
+
+        <div class="stat">
+            <h3>Total Earnings</h3>
+            <h2>$<span id="earnings">0.00</span></h2>
+        </div>
+
+        <div class="stat">
+            <h3>Reward Per Offer</h3>
+            <h2>$0.20</h2>
+        </div>
+
+        <div class="stat">
+            <h3>Status</h3>
+            <h2>✅ Active</h2>
+        </div>
+
+        <div class="stat">
+            <h3>Withdrawals</h3>
+            <h2>Manual</h2>
+        </div>
+
+    </div>
+
+    <div class="card">
+        <h3>Quick Actions</h3>
+        <br>
+        <a href="offer.html" class="btn">View Offers</a>
+        <a href="withdraw.html" class="btn">Withdraw Money</a>
+    </div>
+
+    <div class="card">
+        <h3>Information</h3>
+
+        <p>✔ Earn $0.20 for every valid CPA conversion.</p>
+        <br>
+
+        <p>✔ Withdraw using Mobile Money or Bank Account.</p>
+        <br>
+
+        <p>✔ Withdrawals are processed manually by admin.</p>
+        <br>
+
+        <p>✔ Minimum withdrawal depends on your platform rules.</p>
+    </div>
+
+</div>
+
+<div class="footer">
+© 2026 Sun Money
+</div>
+
+<script>
+
+const API = "http://localhost:3000";
+
+const token = localStorage.getItem("token");
+
+if(!token){
+    window.location.href = "auth.html";
+}
+
+async function loadBalance(){
+
+    try{
+
+        const res = await fetch(API + "/balance",{
+            headers:{
+                Authorization:"Bearer " + token
+            }
+        });
+
+        const data = await res.json();
+
+        document.getElementById("balance").innerText =
+            Number(data.balance || 0).toFixed(2);
+
+        document.getElementById("earnings").innerText =
+            Number(data.balance || 0).toFixed(2);
+
+    }catch(err){
+
+        console.log(err);
+
+        document.getElementById("balance").innerText = "0.00";
+        document.getElementById("earnings").innerText = "0.00";
+    }
+}
+
+function logout(){
+
+    localStorage.clear();
+
+    window.location.href = "auth.html";
+}
+
+loadBalance();
+
+setInterval(loadBalance,5000);
+
+</script>
+
+</body>
+</html>

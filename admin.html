@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Sun Money Admin</title>
+
+<style>
+body{
+    font-family:Arial;
+    background:#f4f4f4;
+    margin:0;
+}
+
+header{
+    background:#ff9800;
+    color:white;
+    text-align:center;
+    padding:15px;
+    font-size:24px;
+}
+
+.container{
+    max-width:1000px;
+    margin:auto;
+    padding:20px;
+}
+
+.card{
+    background:white;
+    padding:15px;
+    margin-bottom:15px;
+    border-radius:10px;
+    box-shadow:0 0 10px rgba(0,0,0,0.1);
+}
+
+input,textarea{
+    width:100%;
+    padding:10px;
+    margin:5px 0;
+    box-sizing:border-box;
+}
+
+button{
+    padding:10px;
+    background:#ff9800;
+    color:white;
+    border:none;
+    cursor:pointer;
+    margin-top:5px;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+}
+
+td,th{
+    border:1px solid #ddd;
+    padding:10px;
+}
+</style>
+</head>
+
+<body>
+
+<header>Sun Money Admin Panel</header>
+
+<div class="container">
+
+<div class="card" id="loginBox">
+<h2>Admin Login</h2>
+
+<input id="username" placeholder="Username">
+<input id="password" type="password" placeholder="Password">
+
+<button onclick="login()">Login</button>
+
+<p id="msg"></p>
+</div>
+
+<div id="panel" style="display:none">
+
+<div class="card">
+<h2>Users</h2>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Username</th>
+<th>Email</th>
+<th>Mobile</th>
+<th>Balance</th>
+</tr>
+</thead>
+<tbody id="users"></tbody>
+</table>
+</div>
+
+<div class="card">
+<h2>Withdrawals</h2>
+<div id="withdrawals"></div>
+</div>
+
+<div class="card">
+<h2>Add Offer</h2>
+
+<input id="title" placeholder="Offer Title">
+<input id="reward" placeholder="Reward">
+
+<input id="url" placeholder="CPA URL">
+
+<textarea id="description"
+placeholder="Description"></textarea>
+
+<button onclick="addOffer()">
+Add Offer
+</button>
+</div>
+
+<div class="card">
+<h2>Offers</h2>
+<div id="offers"></div>
+</div>
+
+</div>
+
+</div>
+
+<script>
+
+const API = "http://localhost:3000";
+
+function token(){
+    return localStorage.getItem("adminToken");
+}
+
+async function login(){
+
+    const res = await fetch(API+"/admin/login",{
+        method:"POST",
+        headers:{
+            "Content-Type":"application/json"
+        },
+        body:JSON.stringify({
+            username:username.value,
+            password:password.value
+        })
+    });
+
+    const data = await res.json();
+
+    if(data.success){
+
+        localStorage.setItem(
+            "adminToken",
+            data.token
+        );
+
+        loginBox.style.display="none";
+        panel.style.display="block";
+
+        loadUsers();
+        loadWithdrawals();
+        loadOffers();
+
+    }else{
+
+        msg.innerText=data.message;
+    }
+}
+
+async function loadUsers(){
+
+    const res = await fetch(
+        API+"/admin/users",
+        {
+            headers:{
+                Authorization:
+                "Bearer "+token()
+            }
+        }
+    );
+
+    const data = await res.json();
+
+    users.innerHTML=data.map(u=>`
+    <tr>
+    <td>${u.id}</td>
+    <td>${u.username}</td>
+    <td>${u.email}</td>
+    <td>${u.mobile}</td>
+    <td>$${u.balance}</td>
+    </tr>
+    `).join("");
+}
+
+async function loadWithdrawals(){
+
+    const res = await fetch(
+        API+"/admin/withdrawals",
+        {
+            headers:{
+                Authorization:
+                "Bearer "+token()
+            }
+        }
+    );
+
+    const data = await res.json();
+
+    withdrawals.innerHTML=data.map(w=>`
+    <div class="card">
+
+    <b>${w.email}</b><br>
+
+    Amount: $${w.amount}<br>
+
+    Method: ${w.method}<br>
+
+    Account: ${w.account}<br>
+
+    Status: ${w.status}<br><br>
+
+    <button onclick="approve(${w.id})">
+    Approve
+    </button>
+
+    <button onclick="reject(${w.id})">
+    Reject
+    </button>
+
+    </div>
+    `).join("");
+}
+
+async function approve(id){
+
+    await fetch(
+        API+"/admin/approve/"+id,
+        {
+            method:"POST",
+            headers:{
+                Authorization:
+                "Bearer "+token()
+            }
+        }
+    );
+
+    loadWithdrawals();
+    loadUsers();
+}
+
+async function reject(id){
+
+    await fetch(
+        API+"/admin/reject/"+id,
+        {
+            method:"POST",
+            headers:{
+                Authorization:
+                "Bearer "+token()
+            }
+        }
+    );
+
+    loadWithdrawals();
+}
+
+async function addOffer(){
+
+    await fetch(
+        API+"/admin/offers",
+        {
+            method:"POST",
+            headers:{
+                "Content-Type":
+                "application/json",
+
+                Authorization:
+                "Bearer "+token()
+            },
+
+            body:JSON.stringify({
+                title:title.value,
+                description:description.value,
+                url:url.value,
+                reward:Number(reward.value)
+            })
+        }
+    );
+
+    loadOffers();
+}
+
+async function loadOffers(){
+
+    const res=
+    await fetch(API+"/offers");
+
+    const data=
+    await res.json();
+
+    offers.innerHTML=
+    data.map(o=>`
+
+    <div class="card">
+
+    <b>${o.title}</b><br>
+
+    ${o.description}<br>
+
+    Reward: $${o.reward}<br><br>
+
+    <button
+    onclick="deleteOffer(${o.id})">
+    Delete
+    </button>
+
+    </div>
+
+    `).join("");
+}
+
+async function deleteOffer(id){
+
+    await fetch(
+        API+"/admin/offers/"+id,
+        {
+            method:"DELETE",
+            headers:{
+                Authorization:
+                "Bearer "+token()
+            }
+        }
+    );
+
+    loadOffers();
+}
+
+</script>
+
+</body>
+</html>
