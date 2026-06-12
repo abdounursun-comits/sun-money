@@ -94,45 +94,6 @@ function adminAuth(req, res, next) {
     });
 }
 
-// ===================== AUTH =====================
-app.post("/register", async (req, res) => {
-    const { username, email, mobile, password } = req.body;
-
-    const hash = await bcrypt.hash(password, 10);
-
-    db.run(
-        "INSERT INTO users (username, email, mobile, password, balance) VALUES (?, ?, ?, ?, 0)",
-        [username, email, mobile, hash],
-        function (err) {
-            if (err) return res.status(400).json({ error: "User exists or invalid data" });
-            res.json({ success: true });
-        }
-    );
-});
-
-app.post("/login", (req, res) => {
-    const { email, password } = req.body;
-
-    db.get("SELECT * FROM users WHERE email = ?", [email], async (err, user) => {
-        if (err || !user) return res.status(400).json({ error: "User not found" });
-
-        const match = await bcrypt.compare(password, user.password);
-        if (!match) return res.status(400).json({ error: "Invalid password" });
-
-        const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: "7d" });
-
-        res.json({
-            success: true,
-            token,
-            user: {
-                id: user.id,
-                username: user.username,
-                email: user.email,
-                balance: user.balance
-            }
-        });
-    });
-});
 
 // ===================== USER =====================
 app.get("/balance", auth, (req, res) => {
@@ -159,6 +120,148 @@ app.get("/click/:offerId", (req, res) => {
         const redirectUrl = `${offer.url}${offer.url.includes("?") ? "&" : "?"}subid=${email}`;
         res.redirect(redirectUrl);
     });
+});
+// ===================== AUTH =====================
+
+// REGISTER
+app.post("/register", async (req, res) => {
+    try {
+
+        const { username, email, mobile, password } = req.body;
+
+        if (!username || !email || !mobile || !password) {
+            return res.status(400).json({
+                success: false,
+                error: "All fields are required"
+            });
+        }
+
+        const hash = await bcrypt.hash(password, 10);
+
+        db.run(
+            `INSERT INTO users
+            (username, email, mobile, password, balance)
+            VALUES (?, ?, ?, ?, 0)`,
+            [username, email, mobile, hash],
+            function(err){
+
+                if(err){
+                    return res.status(400).json({
+                        success:false,
+                        error:"User already exists"
+                    });
+                }
+
+                res.json({
+                    success:true,
+                    message:"Registration successful"
+                });
+            }
+        );
+
+    } catch(err){
+
+        console.error(err);
+
+        res.status(500).json({
+            success:false,
+            error:"Server error"
+        });
+    }
+});
+
+
+// LOGIN
+app.post("/login", (req, res) => {
+
+    const { email, password } = req.body;
+
+    if(!email || !password){
+        return res.status(400).json({
+            success:false,
+            error:"Email and password required"
+        });
+    }
+
+    db.get(
+        "SELECT * FROM users WHERE email = ?",
+        [email],
+        async (err, user) => {
+
+            if(err){
+                return res.status(500).json({
+                    success:false,
+                    error:"Database error"
+                });
+            }
+
+            if(!user){
+                return res.status(400).json({
+                    success:false,
+                    error:"User not found"
+                });
+            }
+
+            const match = await bcrypt.compare(
+                password,
+                user.password
+            );
+
+            if(!match){
+                return res.status(400).json({
+                    success:false,
+                    error:"Invalid password"
+                });
+            }
+
+            const token = jwt.sign(
+                {
+                    id:user.id,
+                    email:user.email
+                },
+                JWT_SECRET,
+                {
+                    expiresIn:"7d"
+                }
+            );
+
+            res.json({
+                success:true,
+                token,
+                user:{
+                    id:user.id,
+                    username:user.username,
+                    email:user.email,
+                    mobile:user.mobile,
+                    balance:user.balance
+                }
+            });
+        }
+    );
+});
+
+
+// CHECK TOKEN
+app.get("/me", auth, (req, res) => {
+
+    db.get(
+        "SELECT id, username, email, mobile, balance FROM users WHERE id = ?",
+        [req.user.id],
+        (err, user) => {
+
+            if(err || !user){
+                return res.status(404).json({
+                    success:false,
+                    error:"User not found"
+                });
+            }
+
+            res.json({
+                success:true,
+                user
+            });
+        }
+    );
 });
 
 // ===================== POSTBACK =====================
