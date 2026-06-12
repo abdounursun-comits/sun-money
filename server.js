@@ -118,7 +118,18 @@ app.get("/offers", (req, res) => {
         res.json(rows);
     });
 });
+app.get("/offers", async (req, res) => {
 
+    const email = req.query.email || "";
+
+    const response = await fetch(
+        `https://www.cpagrip.com/common/offer_feed_json.php?user_id=2533785&pubkey=244fe3706b2cad943347213c5130fe70&tracking_id=${email}`
+    );
+
+    const data = await response.json();
+
+    res.json(data.offers);
+});
 app.get("/click/:offerId", (req, res) => {
     const { offerId } = req.params;
     const email = req.query.email;
