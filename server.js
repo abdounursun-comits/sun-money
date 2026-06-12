@@ -11,7 +11,7 @@ const PORT = process.env.PORT || 3000;
 const app = express();
 app.use(cors());
 app.use(express.json());
-
+app.use(express.static(__dirname));
 // 👇 1. CREATE DB FIRST
 const db = new sqlite3.Database("./sunmoney.db", (err) => {
     if (err) {
@@ -21,8 +21,17 @@ const db = new sqlite3.Database("./sunmoney.db", (err) => {
     }
 });
 app.get("/", (req, res) => {
-    res.sendFile(path.join(__dirname, "auth.html"));
+    res.sendFile(path.join(__dirname, "dashboard.html"));
 });
+const JWT_SECRET =
+    process.env.JWT_SECRET || "sun_money_secret";
+
+const ADMIN_SECRET =
+    process.env.ADMIN_JWT_SECRET || "sun_money_admin_secret";
+
+const POSTBACK_SECRET =
+    process.env.POSTBACK_SECRET || "POSTBACK_SECRET";
+
 
 // ===================== DB INIT =====================
 db.serialize(() => {
