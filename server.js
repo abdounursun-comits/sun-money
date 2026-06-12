@@ -16,8 +16,12 @@ const JWT_SECRET = process.env.JWT_SECRET || "sun_money_secret";
 const ADMIN_SECRET = process.env.ADMIN_JWT_SECRET || "sun_money_admin_secret";
 const POSTBACK_SECRET = process.env.POSTBACK_SECRET || "POSTBACK_SECRET";
 
+const dbPath =
+  process.env.RENDER
+    ? "/tmp/sunmoney.db"
+    : "./sunmoney.db";
 
-const db = new sqlite3.Database("./sunmoney.db", (err) => {
+const db = new sqlite3.Database(dbPath, (err) => {
     if (err) {
         console.error("❌ SQLite NOT connected:", err.message);
     } else {
