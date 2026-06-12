@@ -127,20 +127,20 @@ async function withdrawMoney(){
         document.getElementById("amount").value;
 
     const res = await fetch(
-        "https://sun-money.onrender.com",
-        {
-            method:"POST",
-            headers:{
-                "Content-Type":"application/json",
-                "Authorization":"Bearer " + token
-            },
-            body:JSON.stringify({
-                method,
-                account,
-                amount
-            })
-        }
-    );
+    "https://sun-money.onrender.com/withdraw",
+    {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + token
+        },
+        body: JSON.stringify({
+            method,
+            account,
+            amount
+        })
+    }
+);
 
     const data = await res.json();
 
