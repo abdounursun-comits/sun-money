@@ -64,12 +64,12 @@ button:hover{
 
 .msg{
     text-align:center;
-    color:red;
     margin-top:10px;
+    color:red;
 }
 </style>
-</head>
 
+</head>
 <body>
 
 <div class="box">
@@ -92,11 +92,12 @@ button:hover{
 
     <!-- REGISTER -->
     <div id="registerBox" class="hidden">
+
         <h2>Register</h2>
 
         <input type="text" id="username" placeholder="Username">
         <input type="email" id="email" placeholder="Email">
-        <input type="text" id="mobil" placeholder="Mobile Number">
+        <input type="text" id="mobile" placeholder="Mobile Number">
         <input type="password" id="password" placeholder="Password">
 
         <button onclick="register()">Register</button>
@@ -106,6 +107,7 @@ button:hover{
         <div class="switch" onclick="showLogin()">
             Already have an account? Login
         </div>
+
     </div>
 
 </div>
@@ -114,7 +116,8 @@ button:hover{
 
 const API = "https://sun-money.onrender.com";
 
-// SWITCH
+// ===================== SWITCH =====================
+
 function showRegister(){
     document.getElementById("loginBox").classList.add("hidden");
     document.getElementById("registerBox").classList.remove("hidden");
@@ -125,7 +128,8 @@ function showLogin(){
     document.getElementById("loginBox").classList.remove("hidden");
 }
 
-// REGISTER
+// ===================== REGISTER =====================
+
 async function register(){
 
     try{
@@ -138,7 +142,7 @@ async function register(){
             body:JSON.stringify({
                 username:document.getElementById("username").value,
                 email:document.getElementById("email").value,
-                mobile:document.getElementById("mobil").value,
+                mobile:document.getElementById("mobile").value,
                 password:document.getElementById("password").value
             })
         });
@@ -146,27 +150,33 @@ async function register(){
         const data = await res.json();
 
         if(data.success){
+
             document.getElementById("regMsg").style.color = "green";
             document.getElementById("regMsg").innerText =
                 "Registration successful. Please login.";
 
-            setTimeout(()=>{
+            setTimeout(() => {
                 showLogin();
-            },1000);
+            }, 1000);
 
         }else{
+
             document.getElementById("regMsg").style.color = "red";
             document.getElementById("regMsg").innerText =
-                data.message || "Registration failed";
+                data.error || "Registration failed";
         }
 
     }catch(err){
+
+        console.error(err);
+
         document.getElementById("regMsg").innerText =
             "Cannot connect to server";
     }
 }
 
-// LOGIN
+// ===================== LOGIN =====================
+
 async function login(){
 
     try{
@@ -184,17 +194,26 @@ async function login(){
 
         const data = await res.json();
 
-        if(!data.success){
+        console.log(data);
+        alert(JSON.stringify(data));
+
+        if(data.success){
+
+            localStorage.setItem("token", data.token);
+            localStorage.setItem("email", data.user.email);
+            localStorage.setItem("username", data.user.username);
+
+            window.location.href = "dashboard.html";
+
+        }else{
+
             document.getElementById("loginMsg").innerText =
-                data.message || "Login failed";
-            return;
+                data.error || "Login failed";
         }
 
-        localStorage.setItem("token", data.token);
-
-        window.location.href = "dashboard.html";
-
     }catch(err){
+
+        console.error(err);
 
         document.getElementById("loginMsg").innerText =
             "Cannot connect to server";
