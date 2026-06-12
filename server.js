@@ -1,3 +1,4 @@
+
 require("dotenv").config();
 
 const express = require("express");
@@ -5,32 +6,22 @@ const sqlite3 = require("sqlite3").verbose();
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const cors = require("cors");
-
+const path = require("path");
+const PORT = process.env.PORT || 3000;
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-const PORT = process.env.PORT || 3000;
-
-const JWT_SECRET = process.env.JWT_SECRET || "sun_money_secret";
-const ADMIN_SECRET = process.env.ADMIN_JWT_SECRET || "sun_money_admin_secret";
-const POSTBACK_SECRET = process.env.POSTBACK_SECRET || "POSTBACK_SECRET";
-
-const dbPath =
-  process.env.RENDER
-    ? "/tmp/sunmoney.db"
-    : "./sunmoney.db";
-
-const db = new sqlite3.Database(dbPath, (err) => {
+// 👇 1. CREATE DB FIRST
+const db = new sqlite3.Database("./sunmoney.db", (err) => {
     if (err) {
         console.error("❌ SQLite NOT connected:", err.message);
     } else {
         console.log("✅ SQLite database connected");
     }
 });
-
 app.get("/", (req, res) => {
-    res.send("Sun Money Server is running 🚀");
+    res.sendFile(path.join(__dirname, "auth.html"));
 });
 
 // ===================== DB INIT =====================
