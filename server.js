@@ -9,6 +9,7 @@ const cors = require("cors");
 const path = require("path");
 const PORT = process.env.PORT || 3000;
 const app = express();
+const fetch = require("node-fetch");
 app.use(cors());
 app.use(express.json());
 app.use(express.static(__dirname));
@@ -105,39 +106,28 @@ function adminAuth(req, res, next) {
 
 
 // ===================== USER =====================
-app.get("/balance", auth, (req, res) => {
-    db.get("SELECT balance FROM users WHERE id = ?", [req.user.id], (err, row) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json({ balance: row.balance });
-    });
-});
-app.get("/offers", (req, res) => {
-    res.json([
-        {
-            id: 1,
-            title: "Example Offer",
-            description: "Install app",
-            reward: 0.20
-        }
-    ]);
-});
-app.get("/offers", (req, res) => {
-    db.all("SELECT * FROM offers", [], (err, rows) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json(rows);
-    });
-});
+
 app.get("/offers", async (req, res) => {
+    try {
 
-    const email = req.query.email || "";
+        const email = req.query.email || "";
 
-    const response = await fetch(
-        `https://www.cpagrip.com/common/offer_feed_json.php?user_id=2533785&pubkey=244fe3706b2cad943347213c5130fe70&tracking_id=${email}`
-    );
+        const response = await fetch(
+            `https://www.cpagrip.com/common/offer_feed_json.php?user_id=2533785&pubkey=244fe3706b2cad943347213c5130fe70&tracking_id=${email}`
+        );
 
-    const data = await response.json();
+        const data = await response.json();
 
-    res.json(data.offers);
+        res.json(data.offers || []);
+
+    } catch (err) {
+
+        console.error("Offer feed error:", err);
+
+        res.status(500).json({
+            error: "Failed to load offers"
+        });
+    }
 });
 app.get("/click/:offerId", (req, res) => {
     const { offerId } = req.params;
