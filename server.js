@@ -49,7 +49,7 @@ db.serialize(() => {
             title TEXT,
             description TEXT,
             url TEXT,
-            reward REAL DEFAULT 0.20
+            reward REAL NOT NULL
         )
     `);
 
@@ -64,6 +64,7 @@ db.serialize(() => {
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )
     `);
+
 });
 
 // ================= AUTH MIDDLEWARE =================
@@ -338,8 +339,13 @@ app.get("/admin/users", adminAuth, (req, res) => {
             res.json(rows);
         }
     );
-});
 
+});
+app.get("/test-users", (req,res)=>{
+    db.all("SELECT * FROM users", [], (err, rows)=>{
+        res.json(rows);
+    });
+});
 // Admin Withdrawals
 app.get("/admin/withdrawals", adminAuth, (req, res) => {
 
@@ -424,6 +430,24 @@ app.post("/admin/notify", adminAuth, (req, res) => {
             });
         }
     );
+});
+app.get("/admin/offers", adminAuth, (req, res) => {
+
+    db.all(
+        "SELECT * FROM offers ORDER BY id DESC",
+        [],
+        (err, rows) => {
+
+            if(err){
+                return res.status(500).json({
+                    error: err.message
+                });
+            }
+
+            res.json(rows);
+        }
+    );
+
 });
 // ================= START =================
 app.listen(PORT, () => {
