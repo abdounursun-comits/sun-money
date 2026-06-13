@@ -49,7 +49,7 @@ db.serialize(() => {
             title TEXT,
             description TEXT,
             url TEXT,
-            reward REAL NOT NULL
+            reward REAL
         )
     `);
 
@@ -61,6 +61,16 @@ db.serialize(() => {
             account TEXT,
             amount REAL,
             status TEXT DEFAULT 'Pending',
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    `);
+
+    // ✅ ADD THIS (IMPORTANT)
+    db.run(`
+        CREATE TABLE IF NOT EXISTS notifications (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
+            message TEXT,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )
     `);
@@ -450,6 +460,3 @@ app.get("/admin/offers", adminAuth, (req, res) => {
 
 });
 // ================= START =================
-app.listen(PORT, () => {
-    console.log(`🚀 Server running on port ${PORT}`);
-});
