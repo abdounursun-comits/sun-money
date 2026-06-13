@@ -1,4 +1,3 @@
-
 require("dotenv").config();
 
 const express = require("express");
@@ -7,35 +6,32 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const cors = require("cors");
 const path = require("path");
-const PORT = process.env.PORT || 3000;
+
 const app = express();
-const fetch = require("node-fetch");
+const PORT = process.env.PORT || 3000;
+
 app.use(cors());
 app.use(express.json());
 app.use(express.static(__dirname));
-// 👇 1. CREATE DB FIRST
+
+// ================= DATABASE =================
 const db = new sqlite3.Database("./sunmoney.db", (err) => {
-    if (err) {
-        console.error("❌ SQLite NOT connected:", err.message);
-    } else {
-        console.log("✅ SQLite database connected");
-    }
+    if (err) console.error("DB error:", err.message);
+    else console.log("✅ SQLite connected");
 });
+
+// ================= HOME =================
 app.get("/", (req, res) => {
     res.sendFile(path.join(__dirname, "dashboard.html"));
 });
-const JWT_SECRET =
-    process.env.JWT_SECRET || "sun_money_secret";
 
-const ADMIN_SECRET =
-    process.env.ADMIN_JWT_SECRET || "sun_money_admin_secret";
+// ================= SECURITY KEYS =================
+const JWT_SECRET = process.env.JWT_SECRET || "sun_money_secret";
+const ADMIN_SECRET = process.env.ADMIN_JWT_SECRET || "sun_money_admin_secret";
 
-const POSTBACK_SECRET =
-    process.env.POSTBACK_SECRET || "POSTBACK_SECRET";
-
-
-// ===================== DB INIT =====================
+// ================= DB INIT =================
 db.serialize(() => {
+
     db.run(`
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -68,23 +64,15 @@ db.serialize(() => {
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )
     `);
-
-    db.run(`
-        CREATE TABLE IF NOT EXISTS notifications (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER,
-            message TEXT,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        )
-    `);
 });
 
-// ===================== MIDDLEWARE =====================
+// ================= AUTH MIDDLEWARE =================
 function auth(req, res, next) {
     const header = req.headers["authorization"];
     if (!header) return res.status(401).json({ error: "No token" });
 
     const token = header.split(" ")[1];
+
     jwt.verify(token, JWT_SECRET, (err, user) => {
         if (err) return res.status(403).json({ error: "Invalid token" });
         req.user = user;
@@ -92,337 +80,349 @@ function auth(req, res, next) {
     });
 }
 
-function adminAuth(req, res, next) {
-    const header = req.headers["authorization"];
-    if (!header) return res.status(401).json({ error: "No token" });
+// ================= BALANCE =================
+app.get("/balance", auth, (req, res) => {
+    db.get(
+        "SELECT balance FROM users WHERE id = ?",
+        [req.user.id],
+        (err, row) => {
 
-    const token = header.split(" ")[1];
-    jwt.verify(token, ADMIN_SECRET, (err, admin) => {
-        if (err) return res.status(403).json({ error: "Invalid admin token" });
-        req.admin = admin;
-        next();
-    });
-}
+            if (err) {
+                return res.status(500).json({ error: err.message });
+            }
 
+            if (!row) {
+                return res.status(404).json({ error: "User not found" });
+            }
 
-// ===================== USER =====================
-
-app.get("/offers", async (req, res) => {
-    try {
-
-        const email = req.query.email || "";
-
-        const response = await fetch(
-            `https://www.cpagrip.com/common/offer_feed_json.php?user_id=2533785&pubkey=244fe3706b2cad943347213c5130fe70&tracking_id=${email}`
-        );
-
-        const data = await response.json();
-
-        res.json(data.offers || []);
-
-    } catch (err) {
-
-        console.error("Offer feed error:", err);
-
-        res.status(500).json({
-            error: "Failed to load offers"
-        });
-    }
+            res.json({ balance: row.balance });
+        }
+    );
 });
+
+// ================= OFFERS (FIXED - ONLY ONE ROUTE) =================
+app.get("/offers", (req, res) => {
+    db.all("SELECT * FROM offers", [], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
+// ================= CLICK TRACKING =================
 app.get("/click/:offerId", (req, res) => {
     const { offerId } = req.params;
-    const email = req.query.email;
+    const email = req.query.email || "";
 
     db.get("SELECT * FROM offers WHERE id = ?", [offerId], (err, offer) => {
         if (err || !offer) return res.status(404).send("Offer not found");
 
-        const redirectUrl = `${offer.url}${offer.url.includes("?") ? "&" : "?"}subid=${email}`;
+        const redirectUrl =
+            offer.url +
+            (offer.url.includes("?") ? "&" : "?") +
+            "subid=" +
+            email;
+
         res.redirect(redirectUrl);
     });
 });
-// ===================== AUTH =====================
 
-// REGISTER
+// ================= REGISTER =================
 app.post("/register", async (req, res) => {
-    try {
 
-        const { username, email, mobile, password } = req.body;
+    const { username, email, mobile, password } = req.body;
 
-        if (!username || !email || !mobile || !password) {
-            return res.status(400).json({
-                success: false,
-                error: "All fields are required"
-            });
-        }
-
-        const hash = await bcrypt.hash(password, 10);
-
-        db.run(
-            `INSERT INTO users
-            (username, email, mobile, password, balance)
-            VALUES (?, ?, ?, ?, 0)`,
-            [username, email, mobile, hash],
-            function(err){
-
-                if(err){
-                    return res.status(400).json({
-                        success:false,
-                        error:"User already exists"
-                    });
-                }
-
-                res.json({
-                    success:true,
-                    message:"Registration successful"
-                });
-            }
-        );
-
-    } catch(err){
-
-        console.error(err);
-
-        res.status(500).json({
-            success:false,
-            error:"Server error"
-        });
+    if (!username || !email || !mobile || !password) {
+        return res.status(400).json({ error: "All fields required" });
     }
+
+    const hash = await bcrypt.hash(password, 10);
+
+    db.run(
+        `INSERT INTO users (username, email, mobile, password, balance)
+         VALUES (?, ?, ?, ?, 0)`,
+        [username, email, mobile, hash],
+        (err) => {
+            if (err) {
+                return res.status(400).json({ error: "User exists" });
+            }
+            res.json({ success: true });
+        }
+    );
 });
 
-
-// LOGIN
+// ================= LOGIN =================
 app.post("/login", (req, res) => {
 
     const { email, password } = req.body;
-
-    if(!email || !password){
-        return res.status(400).json({
-            success:false,
-            error:"Email and password required"
-        });
-    }
 
     db.get(
         "SELECT * FROM users WHERE email = ?",
         [email],
         async (err, user) => {
 
-            if(err){
-                return res.status(500).json({
-                    success:false,
-                    error:"Database error"
-                });
+            if (err || !user) {
+                return res.status(400).json({ error: "User not found" });
             }
 
-            if(!user){
-                return res.status(400).json({
-                    success:false,
-                    error:"User not found"
-                });
-            }
+            const match = await bcrypt.compare(password, user.password);
 
-            const match = await bcrypt.compare(
-                password,
-                user.password
-            );
-
-            if(!match){
-                return res.status(400).json({
-                    success:false,
-                    error:"Invalid password"
-                });
+            if (!match) {
+                return res.status(400).json({ error: "Wrong password" });
             }
 
             const token = jwt.sign(
-                {
-                    id:user.id,
-                    email:user.email
-                },
+                { id: user.id, email: user.email },
                 JWT_SECRET,
-                {
-                    expiresIn:"7d"
-                }
+                { expiresIn: "7d" }
             );
 
-            res.json({
-                success:true,
-                token,
-                user:{
-                    id:user.id,
-                    username:user.username,
-                    email:user.email,
-                    mobile:user.mobile,
-                    balance:user.balance
-                }
-            });
+            res.json({ token, user });
         }
     );
 });
 
-
-// CHECK TOKEN
-app.get("/me", auth, (req, res) => {
-
-    db.get(
-        "SELECT id, username, email, mobile, balance FROM users WHERE id = ?",
-        [req.user.id],
-        (err, user) => {
-
-            if(err || !user){
-                return res.status(404).json({
-                    success:false,
-                    error:"User not found"
-                });
-            }
-
-            res.json({
-                success:true,
-                user
-            });
-        }
-    );
-});
-
-// ===================== POSTBACK =====================
+// ================= POSTBACK =================
 app.get("/postback", (req, res) => {
+
     const subid = req.query.var;
     const payout = parseFloat(req.query.amount || 0);
+
+    if (!subid || !payout) {
+        return res.status(400).send("INVALID");
+    }
 
     db.run(
         "UPDATE users SET balance = balance + ? WHERE email = ?",
         [payout, subid],
-        function(err) {
-            if(err) return res.status(500).send("ERROR");
+        (err) => {
+            if (err) return res.status(500).send("ERROR");
             res.send("OK");
         }
     );
 });
 
-
-// ===================== WITHDRAW =====================
+// ================= WITHDRAW =================
 app.post("/withdraw", auth, (req, res) => {
+
     const { method, account, amount } = req.body;
 
-    db.get("SELECT balance, email FROM users WHERE id = ?", [req.user.id], (err, user) => {
-        if (err || !user) return res.status(400).json({ error: "User not found" });
+    db.get(
+        "SELECT balance, email FROM users WHERE id = ?",
+        [req.user.id],
+        (err, user) => {
 
-        if (user.balance < amount) {
-            return res.status(400).json({ error: "Insufficient balance" });
-        }
-
-        db.run(
-            "INSERT INTO withdrawals (email, method, account, amount, status) VALUES (?, ?, ?, ?, 'Pending')",
-            [user.email, method, account, amount],
-            () => {
-                res.json({ success: true, message: "Withdrawal request submitted" });
+            if (err || !user) {
+                return res.status(400).json({ error: "User not found" });
             }
-        );
-    });
-});
 
-// ===================== NOTIFICATIONS =====================
-app.get("/notifications/:userId", auth, (req, res) => {
-    db.all(
-        "SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC",
-        [req.params.userId],
-        (err, rows) => {
-            if (err) return res.status(500).json({ error: err.message });
-            res.json(rows);
+            if (user.balance < amount) {
+                return res.status(400).json({ error: "Insufficient balance" });
+            }
+
+            db.run(
+                "INSERT INTO withdrawals (email, method, account, amount) VALUES (?, ?, ?, ?)",
+                [user.email, method, account, amount],
+                () => {
+                    res.json({ success: true });
+                }
+            );
         }
     );
 });
 
 // ===================== ADMIN =====================
+app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+});
+// Admin Login
 app.post("/admin/login", (req, res) => {
+
     const { username, password } = req.body;
 
-    if (username !== "sunadmin" || password !== "SunMoney2026!") {
-        return res.status(403).json({ error: "Invalid admin credentials" });
+    const ADMIN_USERNAME =
+        process.env.ADMIN_USERNAME || "sunadmin";
+
+    const ADMIN_PASSWORD =
+        process.env.ADMIN_PASSWORD || "SunMoney2026!";
+
+    if (
+        username !== ADMIN_USERNAME ||
+        password !== ADMIN_PASSWORD
+    ) {
+        return res.status(403).json({
+            success: false,
+            error: "Invalid admin credentials"
+        });
     }
 
-    const token = jwt.sign({ role: "admin" }, ADMIN_SECRET, { expiresIn: "7d" });
+    const token = jwt.sign(
+        { role: "admin" },
+        ADMIN_SECRET,
+        { expiresIn: "7d" }
+    );
 
-    res.json({ success: true, token });
+    res.json({
+        success: true,
+        token
+    });
 });
 
-app.get("/admin/stats", adminAuth, (req, res) => {
-    db.get("SELECT COUNT(*) as users FROM users", [], (err, usersRow) => {
-        db.get("SELECT COUNT(*) as pending FROM withdrawals WHERE status='Pending'", [], (err2, pendingRow) => {
-            db.get("SELECT COUNT(*) as paid FROM withdrawals WHERE status='Approved'", [], (err3, paidRow) => {
-                db.get("SELECT SUM(balance) as balance FROM users", [], (err4, balRow) => {
-                    res.json({
-                        users: usersRow.users,
-                        pending: pendingRow.pending,
-                        paid: paidRow.paid,
-                        balance: balRow.balance || 0
-                    });
-                });
-            });
+// Admin Middleware
+function adminAuth(req, res, next) {
+
+    const header = req.headers.authorization;
+
+    if (!header) {
+        return res.status(401).json({
+            error: "No token"
         });
-    });
-});
+    }
 
-app.get("/admin/users", adminAuth, (req, res) => {
-    db.all("SELECT id, username, email, mobile, balance FROM users", [], (err, rows) => {
-        res.json(rows);
-    });
-});
+    const token = header.split(" ")[1];
 
-app.get("/admin/withdrawals", adminAuth, (req, res) => {
-    db.all("SELECT * FROM withdrawals", [], (err, rows) => {
-        res.json(rows);
-    });
-});
+    jwt.verify(
+        token,
+        ADMIN_SECRET,
+        (err, admin) => {
 
-app.post("/admin/approve/:id", adminAuth, (req, res) => {
-    db.get("SELECT * FROM withdrawals WHERE id = ?", [req.params.id], (err, w) => {
-        if (!w) return res.status(404).json({ error: "Not found" });
+            if (err) {
+                return res.status(403).json({
+                    error: "Invalid admin token"
+                });
+            }
 
-        db.run("UPDATE withdrawals SET status='Approved' WHERE id=?", [req.params.id]);
+            req.admin = admin;
+            next();
+        }
+    );
+}
 
-        db.run("UPDATE users SET balance = balance - ? WHERE email = ?", [w.amount, w.email]);
+// Admin Stats
+app.get("/admin/stats", adminAuth, (req, res) => {
 
-        res.json({ success: true });
-    });
-});
+    db.get(
+        "SELECT COUNT(*) as users FROM users",
+        [],
+        (err, row) => {
 
-app.post("/admin/reject/:id", adminAuth, (req, res) => {
-    db.run("UPDATE withdrawals SET status='Rejected' WHERE id=?", [req.params.id], () => {
-        res.json({ success: true });
-    });
-});
+            if (err) {
+                return res.status(500).json({
+                    error: err.message
+                });
+            }
 
-app.post("/admin/offers", adminAuth, (req, res) => {
-    const { title, description, url, reward } = req.body;
-
-    db.run(
-        "INSERT INTO offers (title, description, url, reward) VALUES (?, ?, ?, ?)",
-        [title, description, url, reward],
-        () => {
-            res.json({ success: true });
+            res.json({
+                totalUsers: row.users
+            });
         }
     );
 });
 
-app.delete("/admin/offers/:id", adminAuth, (req, res) => {
-    db.run("DELETE FROM offers WHERE id = ?", [req.params.id], () => {
-        res.json({ success: true });
-    });
+// Admin Users
+app.get("/admin/users", adminAuth, (req, res) => {
+
+    db.all(
+        "SELECT id, username, email, mobile, balance FROM users",
+        [],
+        (err, rows) => {
+
+            if (err) {
+                return res.status(500).json({
+                    error: err.message
+                });
+            }
+
+            res.json(rows);
+        }
+    );
 });
 
+// Admin Withdrawals
+app.get("/admin/withdrawals", adminAuth, (req, res) => {
+
+    db.all(
+        "SELECT * FROM withdrawals ORDER BY id DESC",
+        [],
+        (err, rows) => {
+
+            if (err) {
+                return res.status(500).json({
+                    error: err.message
+                });
+            }
+
+            res.json(rows);
+        }
+    );
+});
+
+// Approve Withdrawal
+app.post("/admin/approve/:id", adminAuth, (req, res) => {
+
+    db.run(
+        "UPDATE withdrawals SET status='Approved' WHERE id=?",
+        [req.params.id],
+        function(err){
+
+            if(err){
+                return res.status(500).json({
+                    error: err.message
+                });
+            }
+
+            res.json({
+                success:true,
+                message:"Withdrawal approved"
+            });
+        }
+    );
+});
+
+// Reject Withdrawal
+app.post("/admin/reject/:id", adminAuth, (req, res) => {
+
+    db.run(
+        "UPDATE withdrawals SET status='Rejected' WHERE id=?",
+        [req.params.id],
+        function(err){
+
+            if(err){
+                return res.status(500).json({
+                    error: err.message
+                });
+            }
+
+            res.json({
+                success:true,
+                message:"Withdrawal rejected"
+            });
+        }
+    );
+});
+
+// Send Notification
 app.post("/admin/notify", adminAuth, (req, res) => {
+
     const { user_id, message } = req.body;
 
     db.run(
         "INSERT INTO notifications (user_id, message) VALUES (?, ?)",
         [user_id, message],
-        () => {
-            res.json({ success: true });
+        function(err){
+
+            if(err){
+                return res.status(500).json({
+                    error: err.message
+                });
+            }
+
+            res.json({
+                success:true
+            });
         }
     );
 });
-
-// ===================== START =====================
+// ================= START =================
 app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+    console.log(`🚀 Server running on port ${PORT}`);
 });
