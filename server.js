@@ -286,21 +286,19 @@ app.get("/me", auth, (req, res) => {
 
 // ===================== POSTBACK =====================
 app.get("/postback", (req, res) => {
-    const { subid, secret } = req.query;
-
-    if (secret !== POSTBACK_SECRET) {
-        return res.status(403).send("Invalid secret");
-    }
+    const subid = req.query.var;
+    const payout = parseFloat(req.query.amount || 0);
 
     db.run(
-        "UPDATE users SET balance = balance + 0.20 WHERE email = ?",
-        [subid],
-        function (err) {
-            if (err) return res.status(500).send("Error");
+        "UPDATE users SET balance = balance + ? WHERE email = ?",
+        [payout, subid],
+        function(err) {
+            if(err) return res.status(500).send("ERROR");
             res.send("OK");
         }
     );
 });
+
 
 // ===================== WITHDRAW =====================
 app.post("/withdraw", auth, (req, res) => {
