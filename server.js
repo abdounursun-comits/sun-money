@@ -111,7 +111,16 @@ app.get("/balance", auth, (req, res) => {
         res.json({ balance: row.balance });
     });
 });
-
+app.get("/offers", (req, res) => {
+    res.json([
+        {
+            id: 1,
+            title: "Example Offer",
+            description: "Install app",
+            reward: 0.20
+        }
+    ]);
+});
 app.get("/offers", (req, res) => {
     db.all("SELECT * FROM offers", [], (err, rows) => {
         if (err) return res.status(500).json({ error: err.message });
