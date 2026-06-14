@@ -473,4 +473,19 @@ app.post("/admin/offers", adminAuth, (req, res) => {
         }
     );
 });
+async function addOffer(){
+
+    await fetch(API + "/admin/offers", {
+        method:"POST",
+        headers: headers(),
+        body: JSON.stringify({
+            title: title.value,
+            description: desc.value,
+            url: url.value,
+            reward: parseFloat(reward.value)
+        })
+    });
+
+    loadOffers();
+}
 // ================= START =================
