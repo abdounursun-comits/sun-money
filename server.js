@@ -513,19 +513,24 @@ app.post("/admin/offers", adminAuth, (req, res) => {
         }
     );
 });
-async function addOffer(){
+const res = await fetch(API + "/admin/offers", {
+    method: "POST",
+    headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + localStorage.getItem("adminToken")
+    },
+    body: JSON.stringify({
+        title,
+        description,
+        url,
+        reward
+    })
+});
 
-    await fetch(API + "/admin/offers", {
-        method:"POST",
-        headers: headers(),
-        body: JSON.stringify({
-            title: title.value,
-            description: desc.value,
-            url: url.value,
-            reward: parseFloat(reward.value)
-        })
-    });
+const data = await res.json();
 
-    loadOffers();
-}
+console.log("STATUS:", res.status);
+console.log("DATA:", data);
+
+alert(JSON.stringify(data));
 // ================= START =================
