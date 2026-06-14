@@ -434,18 +434,42 @@ app.post("/admin/notify", adminAuth, (req, res) => {
         }
     );
 });
-app.put("/admin/offers/:id", adminAuth, (req, res) => {
-    const { title, description, url, reward } = req.body;
+app.post("/admin/offers", adminAuth, (req, res) => {
+
+    let { title, description, url, reward } = req.body;
+
+    if (!title || !url) {
+        return res.status(400).json({
+            success: false,
+            error: "Title and URL required"
+        });
+    }
+
+    reward = parseFloat(reward);
+
+    if (isNaN(reward)) {
+        reward = 0.20; // fallback
+    }
 
     db.run(
-        `UPDATE offers
-         SET title=?, description=?, url=?, reward=?
-         WHERE id=?`,
-        [title, description, url, reward, req.params.id],
-        (err) => {
-            if (err) return res.status(500).json({ error: err.message });
+        `INSERT INTO offers (title, description, url, reward)
+         VALUES (?, ?, ?, ?)`,
+        [title, description, url, reward],
+        function (err) {
 
-            res.json({ success: true });
+            if (err) {
+                console.log("DB ERROR:", err.message);
+
+                return res.status(500).json({
+                    success: false,
+                    error: err.message
+                });
+            }
+
+            res.json({
+                success: true,
+                id: this.lastID
+            });
         }
     );
 });
