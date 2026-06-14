@@ -87,12 +87,26 @@ nav a{
     text-decoration:none;
     border-radius:6px;
     margin-right:10px;
+    margin-top:10px;
+}
+
+.notification{
+    background:#fff8e1;
+    border-left:4px solid #ff9800;
+    padding:10px;
+    margin-top:10px;
+    border-radius:5px;
 }
 
 .footer{
     text-align:center;
     padding:20px;
     color:#666;
+}
+
+.loading{
+    text-align:center;
+    color:#888;
 }
 </style>
 </head>
@@ -113,7 +127,7 @@ nav a{
 <div class="container">
 
     <div class="card">
-        <h2>Welcome to Sun Money</h2>
+        <h2>Welcome <span id="username">User</span></h2>
         <p>Complete CPA offers and earn money.</p>
     </div>
 
@@ -140,8 +154,8 @@ nav a{
         </div>
 
         <div class="stat">
-            <h3>Withdrawals</h3>
-            <h2>Manual</h2>
+            <h3>User ID</h3>
+            <h2 id="userId">0</h2>
         </div>
 
     </div>
@@ -151,6 +165,14 @@ nav a{
         <br>
         <a href="offer.html" class="btn">View Offers</a>
         <a href="withdraw.html" class="btn">Withdraw Money</a>
+    </div>
+
+    <div class="card">
+        <h3>Notifications</h3>
+
+        <div id="notifications" class="loading">
+            Loading notifications...
+        </div>
     </div>
 
     <div class="card">
@@ -165,7 +187,7 @@ nav a{
         <p>✔ Withdrawals are processed manually by admin.</p>
         <br>
 
-        <p>✔ Minimum withdrawal depends on your platform rules.</p>
+        <p>✔ Complete offers to increase your balance.</p>
     </div>
 
 </div>
@@ -179,10 +201,18 @@ nav a{
 const API = "https://sun-money.onrender.com";
 
 const token = localStorage.getItem("token");
+const userId = localStorage.getItem("userId");
+const username = localStorage.getItem("username");
 
 if(!token){
     window.location.href = "auth.html";
 }
+
+document.getElementById("username").innerText =
+    username || "User";
+
+document.getElementById("userId").innerText =
+    userId || "0";
 
 async function loadBalance(){
 
@@ -211,6 +241,55 @@ async function loadBalance(){
     }
 }
 
+async function loadNotifications(){
+
+    if(!userId){
+        document.getElementById("notifications").innerHTML =
+            "No user ID found. Please login again.";
+        return;
+    }
+
+    try{
+
+        const res = await fetch(
+            API + "/notifications/" + userId,
+            {
+                headers:{
+                    Authorization:"Bearer " + token
+                }
+            }
+        );
+
+        const data = await res.json();
+
+        let html = "";
+
+        if(!data.length){
+            html = "No notifications yet.";
+        }else{
+
+            data.forEach(item => {
+
+                html += `
+                    <div class="notification">
+                        ${item.message}
+                    </div>
+                `;
+
+            });
+        }
+
+        document.getElementById("notifications").innerHTML = html;
+
+    }catch(err){
+
+        console.log(err);
+
+        document.getElementById("notifications").innerHTML =
+            "Failed to load notifications.";
+    }
+}
+
 function logout(){
 
     localStorage.clear();
@@ -219,8 +298,10 @@ function logout(){
 }
 
 loadBalance();
+loadNotifications();
 
 setInterval(loadBalance,5000);
+setInterval(loadNotifications,10000);
 
 </script>
 
