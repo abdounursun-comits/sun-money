@@ -43,13 +43,14 @@ db.serialize(() => {
         )
     `);
 
-    db.run(`
+   db.run(`
         CREATE TABLE IF NOT EXISTS offers (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             title TEXT,
             description TEXT,
             url TEXT,
-            reward REAL
+            reward REAL DEFAULT 0.20,
+            active INTEGER DEFAULT 1
         )
     `);
 
@@ -196,9 +197,9 @@ app.post("/login", (req, res) => {
 app.get("/postback", (req, res) => {
 
     const subid = req.query.var;
-    const payout = parseFloat(req.query.amount || 0);
+    const payout = parseFloat(req.query.amount);
 
-    if (!subid || !payout) {
+    if (!subid || isNaN(payout)) {
         return res.status(400).send("INVALID");
     }
 
@@ -211,7 +212,6 @@ app.get("/postback", (req, res) => {
         }
     );
 });
-
 // ================= WITHDRAW =================
 app.post("/withdraw", auth, (req, res) => {
 
@@ -312,26 +312,23 @@ function adminAuth(req, res, next) {
 }
 
 // Admin Stats
+
 app.get("/admin/stats", adminAuth, (req, res) => {
 
-    db.get(
-        "SELECT COUNT(*) as users FROM users",
-        [],
-        (err, row) => {
+    db.get("SELECT COUNT(*) as users FROM users", [], (e1, users) => {
+    db.get("SELECT COUNT(*) as offers FROM offers", [], (e2, offers) => {
+    db.get("SELECT SUM(balance) as totalBalance FROM users", [], (e3, bal) => {
 
-            if (err) {
-                return res.status(500).json({
-                    error: err.message
-                });
-            }
+        res.json({
+            users: users.users,
+            offers: offers.offers,
+            totalBalance: bal.totalBalance || 0
+        });
 
-            res.json({
-                totalUsers: row.users
-            });
-        }
-    );
+    });
+    });
+    });
 });
-
 // Admin Users
 app.get("/admin/users", adminAuth, (req, res) => {
 
@@ -351,11 +348,7 @@ app.get("/admin/users", adminAuth, (req, res) => {
     );
 
 });
-app.get("/test-users", (req,res)=>{
-    db.all("SELECT * FROM users", [], (err, rows)=>{
-        res.json(rows);
-    });
-});
+
 // Admin Withdrawals
 app.get("/admin/withdrawals", adminAuth, (req, res) => {
 
@@ -441,22 +434,19 @@ app.post("/admin/notify", adminAuth, (req, res) => {
         }
     );
 });
-app.get("/admin/offers", adminAuth, (req, res) => {
+app.put("/admin/offers/:id", adminAuth, (req, res) => {
+    const { title, description, url, reward } = req.body;
 
-    db.all(
-        "SELECT * FROM offers ORDER BY id DESC",
-        [],
-        (err, rows) => {
+    db.run(
+        `UPDATE offers
+         SET title=?, description=?, url=?, reward=?
+         WHERE id=?`,
+        [title, description, url, reward, req.params.id],
+        (err) => {
+            if (err) return res.status(500).json({ error: err.message });
 
-            if(err){
-                return res.status(500).json({
-                    error: err.message
-                });
-            }
-
-            res.json(rows);
+            res.json({ success: true });
         }
     );
-
 });
 // ================= START =================
