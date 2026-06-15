@@ -488,18 +488,16 @@ app.post("/admin/offers", adminAuth, (req, res) => {
     reward = parseFloat(reward);
 
     if (isNaN(reward)) {
-        reward = 0.20; // fallback
+        reward = 0.20;
     }
 
     db.run(
         `INSERT INTO offers (title, description, url, reward)
          VALUES (?, ?, ?, ?)`,
         [title, description, url, reward],
-        function (err) {
+        function(err) {
 
             if (err) {
-                console.log("DB ERROR:", err.message);
-
                 return res.status(500).json({
                     success: false,
                     error: err.message
@@ -513,24 +511,11 @@ app.post("/admin/offers", adminAuth, (req, res) => {
         }
     );
 });
-const res = await fetch(API + "/admin/offers", {
-    method: "POST",
-    headers: {
-        "Content-Type": "application/json",
-        "Authorization": "Bearer " + localStorage.getItem("adminToken")
-    },
-    body: JSON.stringify({
-        title,
-        description,
-        url,
-        reward
-    })
+
+app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
 });
 
-const data = await res.json();
 
-console.log("STATUS:", res.status);
-console.log("DATA:", data);
 
-alert(JSON.stringify(data));
 // ================= START =================
