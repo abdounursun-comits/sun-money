@@ -142,7 +142,26 @@ app.post("/register", async (req, res) => {
 
   res.json({ success: true });
 });
+app.post("/admin/login", (req, res) => {
+  const { password } = req.body;
 
+  if (password !== ADMIN_SECRET) {
+    return res.status(401).json({
+      error: "Wrong password"
+    });
+  }
+
+  const token = jwt.sign(
+    { admin: true },
+    ADMIN_SECRET,
+    { expiresIn: "7d" }
+  );
+
+  res.json({
+    success: true,
+    token
+  });
+});
 // ================= LOGIN =================
 app.post("/login", async (req, res) => {
   const { email, password } = req.body;
