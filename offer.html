@@ -1,145 +1,37 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Sun Money Offers</title>
-
-<style>
-body{
-    font-family:Arial;
-    background:#f5f5f5;
-    margin:0;
-}
-
-header{
-    background:#ff9800;
-    color:white;
-    padding:15px;
-    text-align:center;
-    font-size:20px;
-}
-
-.container{
-    max-width:1000px;
-    margin:auto;
-    padding:20px;
-}
-
-.offer{
-    background:white;
-    padding:15px;
-    margin:10px 0;
-    border-radius:10px;
-    box-shadow:0 0 10px #ddd;
-}
-
-.btn{
-    display:inline-block;
-    padding:10px 15px;
-    background:#4CAF50;
-    color:white;
-    text-decoration:none;
-    border-radius:5px;
-}
-
-.topbar{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    padding:10px 20px;
-    background:#fff;
-    box-shadow:0 2px 5px rgba(0,0,0,0.1);
-}
-
-.logout{
-    background:red;
-    color:white;
-    border:none;
-    padding:8px 12px;
-    border-radius:5px;
-    cursor:pointer;
-}
-</style>
+  <title>Offers</title>
+  <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
 
-<header>🔥 Complete Offers & Earn $0.20</header>
+<div class="container">
 
-<div class="topbar">
-    <div>
-        Sun Money Offers
-    </div>
+  <h1>Offers 🎯</h1>
+  <div id="list"></div>
 
-    <button class="logout" onclick="logout()">Logout</button>
-</div>
-
-<div class="container" id="offers">
-    Loading offers...
 </div>
 
 <script>
+const email = localStorage.getItem("email");
 
-const API = "https://sun-money.onrender.com";
+async function load(){
+  const res = await fetch("/offers");
+  const data = await res.json();
 
-const token = localStorage.getItem("token");
-
-if(!token){
-    window.location.href = "auth.html";
+  list.innerHTML = data.map(o => `
+    <div class="card">
+      <h3>${o.title}</h3>
+      <p>${o.description || ""}</p>
+      <a href="/click/${o.id}?email=${email}">
+        <button>Start Offer</button>
+      </a>
+    </div>
+  `).join("");
 }
 
-// LOAD OFFERS
-async function loadOffers(){
-
-    try{
-
-        const res = await fetch(API + "/offers");
-        const data = await res.json();
-
-        let html = "";
-
-        data.forEach(o => {
-
-            html += `
-            <div class="offer">
-
-                <h3>${o.title}</h3>
-
-                <p>${o.description}</p>
-
-                <b>Reward: $${o.reward}</b>
-
-                <br><br>
-
-                <a
-                class="btn"
-                href="${API}/offer/${o.id}"
-                target="_blank">
-                Start Offer
-                </a>
-
-            </div>
-            `;
-        });
-
-        document.getElementById("offers").innerHTML =
-            html || "No offers available";
-
-    }catch(err){
-
-        document.getElementById("offers").innerHTML =
-            "Error loading offers";
-    }
-}
-
-function logout(){
-
-    localStorage.clear();
-
-    window.location.href = "auth.html";
-}
-
-loadOffers();
-
+load();
 </script>
 
 </body>
