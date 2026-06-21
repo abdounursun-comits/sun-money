@@ -460,14 +460,10 @@ app.get('/admin/clicks', async (req, res) => {
 // ================= POSTBACK (SAFE) =================
 app.get("/postback", async (req, res) => {
   try {
-    const { click_id, payout, secret } = req.query;
+    const { click_id, secret } = req.query;
 
     if (secret !== POSTBACK_SECRET) {
-      return res.status(403).send("INVALID");
-    }
-
-    if (!click_id) {
-      return res.status(400).send("INVALID");
+      return res.status(403).send("INVALID SECRET");
     }
 
     const click = await pool.query(
@@ -476,39 +472,38 @@ app.get("/postback", async (req, res) => {
     );
 
     if (!click.rows.length) {
-      return res.status(400).send("INVALID");
+      return res.status(404).send("CLICK NOT FOUND");
     }
 
-    const row = click.rows[0];
+    const c = click.rows[0];
 
-    if (row.converted) {
+    if (c.converted) {
       return res.send("DUPLICATE");
     }
 
-    if (!row.email) {
-      return res.status(400).send("NO_EMAIL");
-    }
+    const offer = await pool.query(
+      "SELECT reward FROM offers WHERE id=$1",
+      [c.offer_id]
+    );
 
-    const amount = Number(payout || 0);
+    const reward = Number(offer.rows[0].reward);
 
+    // mark conversion first
     await pool.query(
-      "UPDATE users SET balance = balance + $1 WHERE email = $2",
-      [amount, row.email]
+      "UPDATE clicks SET converted=true, payout=$1 WHERE id=$2",
+      [reward, click_id]
     );
 
+    // DIRECT USER CREDIT (THIS IS YOUR MODEL)
     await pool.query(
-      `UPDATE clicks
-       SET converted=true,
-           payout=$1
-       WHERE id=$2`,
-      [amount, click_id]
+      "UPDATE users SET balance = balance + $1 WHERE email=$2",
+      [reward, c.email]
     );
 
-    console.log(
-      `✅ Conversion credited: ${row.email} +$${amount}`
-    );
+    console.log(`✅ USER PAID: ${c.email} +${reward}`);
 
     res.send("OK");
+
   } catch (err) {
     console.error(err);
     res.status(500).send("ERROR");
@@ -692,14 +687,34 @@ app.post("/admin/user/balance", adminAuth, async (req, res) => {
 });
 
 // Delete user
-app.delete("/admin/users/:id", adminAuth, async (req, res) => {
-  await pool.query(
-    "DELETE FROM users WHERE id=$1",
-    [req.params.id]
-  );
+async function editBalance(id){
+  const newBalance = prompt("Enter new balance:");
+  if(!newBalance) return;
 
-  res.json({ success: true });
-});
+  await fetch(API+"/admin/user/balance",{
+    method:"POST",
+    headers:{
+      "Content-Type":"application/json",
+      Authorization:"Bearer "+token
+    },
+    body:JSON.stringify({id, balance:newBalance})
+  });
+
+  location.reload();
+}
+
+async function deleteUser(id){
+  if(!confirm("Delete this user?")) return;
+
+  await fetch(API+"/admin/users/"+id,{
+    method:"DELETE",
+    headers:{
+      Authorization:"Bearer "+token
+    }
+  });
+
+  location.reload();
+}
 
 // Admin clicks API
 app.get("/admin/api/clicks", adminAuth, async (req, res) => {
