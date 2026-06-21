@@ -268,13 +268,265 @@ app.get("/postback", async (req, res) => {
 });
 
 // ================= ADMIN USERS =================
-app.get("/admin/users", adminAuth, async (req, res) => {
+app.delete("/admin/users/:id", adminAuth, async (req, res) => {
+  await pool.query("DELETE FROM users WHERE id=$1", [req.params.id]);
+  res.json({ success: true });
+});
+app.get("/admin/dashboard", adminAuth, async (req, res) => {
+  const users = await pool.query("SELECT COUNT(*) FROM users");
+  const offers = await pool.query("SELECT COUNT(*) FROM offers");
+  const clicks = await pool.query("SELECT COUNT(*) FROM clicks");
+  const withdrawals = await pool.query("SELECT COUNT(*) FROM withdrawals");
+  const balance = await pool.query("SELECT COALESCE(SUM(balance),0) FROM users");
+
+  res.json({
+    users: users.rows[0].count,
+    offers: offers.rows[0].count,
+    clicks: clicks.rows[0].count,
+    withdrawals: withdrawals.rows[0].count,
+    totalBalance: balance.rows[0].coalesce
+  });
+});
+app.get("/admin/user/:id", adminAuth, async (req, res) => {
   const result = await pool.query(
-    "SELECT id,username,email,balance,created_at FROM users ORDER BY id DESC"
+    "SELECT id, username, email, balance, created_at FROM users WHERE id=$1",
+    [req.params.id]
+  );
+
+  if (!result.rows.length) {
+    return res.status(404).json({ error: "User not found" });
+  }
+
+  res.json(result.rows[0]);
+});
+app.post("/admin/user/balance", adminAuth, async (req, res) => {
+  const { id, balance } = req.body;
+
+  await pool.query(
+    "UPDATE users SET balance=$1 WHERE id=$2",
+    [balance, id]
+  );
+
+  res.json({ success: true });
+});
+app.get("/user/dashboard", auth, async (req, res) => {
+  const user = await pool.query(
+    "SELECT id, username, email, balance, pending_withdrawal FROM users WHERE id=$1",
+    [req.user.id]
+  );
+
+  const clicks = await pool.query(
+    "SELECT COUNT(*) FROM clicks WHERE email=$1",
+    [req.user.email]
+  );
+
+  const withdrawals = await pool.query(
+    "SELECT * FROM withdrawals WHERE email=$1 ORDER BY created_at DESC",
+    [req.user.email]
+  );
+
+  res.json({
+    user: user.rows[0],
+    clicks: clicks.rows[0].count,
+    withdrawals: withdrawals.rows
+  });
+});
+app.post("/admin/notify", adminAuth, async (req, res) => {
+  const { user_id, message } = req.body;
+
+  await pool.query(
+    "INSERT INTO notifications(user_id,message) VALUES($1,$2)",
+    [user_id, message]
+  );
+
+  res.json({ success: true });
+});
+app.get("/notifications", auth, async (req, res) => {
+  const result = await pool.query(
+    "SELECT * FROM notifications WHERE user_id=$1 ORDER BY created_at DESC",
+    [req.user.id]
   );
 
   res.json(result.rows);
 });
+app.get("/admin/click-stats", adminAuth, async (req, res) => {
+  const total = await pool.query("SELECT COUNT(*) FROM clicks");
+  const converted = await pool.query("SELECT COUNT(*) FROM clicks WHERE converted=true");
+
+  res.json({
+    totalClicks: total.rows[0].count,
+    conversions: converted.rows[0].count
+  });
+});
+app.get("/admin/withdraw/:id", adminAuth, async (req, res) => {
+  const result = await pool.query(
+    "SELECT * FROM withdrawals WHERE id=$1",
+    [req.params.id]
+  );
+
+  if (!result.rows.length) {
+    return res.status(404).json({ error: "Not found" });
+  }
+
+  res.json(result.rows[0]);
+});
+app.post("/admin/user/reset-balance", adminAuth, async (req, res) => {
+  const { id } = req.body;
+
+  await pool.query(
+    "UPDATE users SET balance=0 WHERE id=$1",
+    [id]
+  );
+
+  res.json({ success: true });
+});
+app.delete("/admin/clear-clicks", adminAuth, async (req, res) => {
+  await pool.query("DELETE FROM clicks");
+  res.json({ success: true });
+});
+app.post("/admin/withdraw/approve", adminAuth, async (req, res) => {
+  const { id } = req.body;
+
+  const w = await pool.query("SELECT * FROM withdrawals WHERE id=$1", [id]);
+  if (!w.rows.length) return res.status(404).json({ error: "Not found" });
+
+  const wd = w.rows[0];
+
+  await pool.query(
+    "UPDATE users SET balance = balance - $1, pending_withdrawal = pending_withdrawal - $1 WHERE email=$2",
+    [wd.amount, wd.email]
+  );
+
+  await pool.query(
+    "UPDATE withdrawals SET status='Approved' WHERE id=$1",
+    [id]
+  );
+
+  res.json({ success: true });
+});
+app.post("/admin/withdraw/reject", adminAuth, async (req, res) => {
+  const { id } = req.body;
+
+  const w = await pool.query("SELECT * FROM withdrawals WHERE id=$1", [id]);
+  if (!w.rows.length) return res.status(404).json({ error: "Not found" });
+
+  const wd = w.rows[0];
+
+  await pool.query(
+    "UPDATE users SET pending_withdrawal = pending_withdrawal - $1 WHERE email=$2",
+    [wd.amount, wd.email]
+  );
+
+  await pool.query(
+    "UPDATE withdrawals SET status='Rejected' WHERE id=$1",
+    [id]
+  );
+
+  res.json({ success: true });
+});
+app.get("/admin/users/search", adminAuth, async (req, res) => {
+  const { q } = req.query;
+
+  const result = await pool.query(
+    `SELECT id, username, email, balance
+     FROM users
+     WHERE email ILIKE $1 OR username ILIKE $1
+     ORDER BY id DESC`,
+    [`%${q}%`]
+  );
+
+  res.json(result.rows);
+});
+app.get("/admin/offers/:id", adminAuth, async (req, res) => {
+  const result = await pool.query(
+    "SELECT * FROM offers WHERE id=$1",
+    [req.params.id]
+  );
+
+  if (!result.rows.length) {
+    return res.status(404).json({ error: "Offer not found" });
+  }
+
+  res.json(result.rows[0]);
+});
+app.get("/admin/user-stats/:id", adminAuth, async (req, res) => {
+  const user = await pool.query("SELECT email FROM users WHERE id=$1", [req.params.id]);
+
+  if (!user.rows.length) {
+    return res.status(404).json({ error: "User not found" });
+  }
+
+  const email = user.rows[0].email;
+
+  const clicks = await pool.query("SELECT COUNT(*) FROM clicks WHERE email=$1", [email]);
+  const conversions = await pool.query("SELECT COUNT(*) FROM clicks WHERE email=$1 AND converted=true", [email]);
+
+  res.json({
+    clicks: clicks.rows[0].count,
+    conversions: conversions.rows[0].count
+  });
+});
+app.get("/offers/page", async (req, res) => {
+  const result = await pool.query(`
+    SELECT * FROM offers
+    WHERE active=true
+    ORDER BY id DESC
+  `);
+
+  let html = "<h1>Available Offers</h1>";
+
+  result.rows.forEach(o => {
+    html += `
+      <div style="padding:10px;border:1px solid #ccc;margin:10px">
+        <h3>${o.title}</h3>
+        <p>Reward: $${o.reward}</p>
+        <a href="/click/${o.id}?email=test@gmail.com" target="_blank">
+          Start Offer
+        </a>
+      </div>
+    `;
+  });
+
+  res.send(html);
+});
+app.get("/api/offers/:id", async (req, res) => {
+  const result = await pool.query(
+    "SELECT * FROM offers WHERE id=$1",
+    [req.params.id]
+  );
+
+  if (!result.rows.length) {
+    return res.status(404).json({ error: "Offer not found" });
+  }
+
+  res.json(result.rows[0]);
+});
+app.post("/admin/offers/:id/toggle", adminAuth, async (req, res) => {
+  await pool.query(
+    "UPDATE offers SET active = NOT active WHERE id=$1",
+    [req.params.id]
+  );
+
+  res.json({ success: true });
+});
+app.get("/admin/offer-stats/:id", adminAuth, async (req, res) => {
+  const clicks = await pool.query(
+    "SELECT COUNT(*) FROM clicks WHERE offer_id=$1",
+    [req.params.id]
+  );
+
+  const conversions = await pool.query(
+    "SELECT COUNT(*) FROM clicks WHERE offer_id=$1 AND converted=true",
+    [req.params.id]
+  );
+
+  res.json({
+    clicks: clicks.rows[0].count,
+    conversions: conversions.rows[0].count
+  });
+});
+
+
 
 // ================= START =================
 app.listen(PORT, () => {
