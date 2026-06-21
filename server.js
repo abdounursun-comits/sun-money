@@ -177,37 +177,37 @@ app.post("/login", async (req, res) => {
 
   if (!r.rows.length) {
     return res.status(400).json({
-      error: "Invalid"
+      success: false,
+      error: "User not found"
     });
   }
 
   const user = r.rows[0];
 
-  const ok = await bcrypt.compare(
-    password,
-    user.password
-  );
+  const ok = await bcrypt.compare(password, user.password);
 
   if (!ok) {
     return res.status(400).json({
-      error: "Invalid"
+      success: false,
+      error: "Wrong password"
     });
   }
 
   const token = jwt.sign(
-    {
-      id: user.id,
-      email: user.email
-    },
+    { id: user.id, email: user.email },
     JWT_SECRET,
-    {
-      expiresIn: "7d"
-    }
+    { expiresIn: "7d" }
   );
 
   res.json({
+    success: true,
     token,
-    user
+    user: {
+      id: user.id,
+      email: user.email,
+      username: user.username,
+      balance: user.balance
+    }
   });
 });
 
