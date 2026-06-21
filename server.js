@@ -284,7 +284,32 @@ app.get("/api/offers", async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 });
+app.post("/admin/offers/:id/enable", adminAuth, async (req, res) => {
+  try {
+    await pool.query(
+      `UPDATE offers SET active = true WHERE id = $1`,
+      [req.params.id]
+    );
 
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+app.delete("/admin/offers/:id", adminAuth, async (req, res) => {
+  try {
+    await pool.query(
+      `DELETE FROM offers WHERE id = $1`,
+      [req.params.id]
+    );
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
 // ================= ADMIN CREATE OFFER =================
 app.post("/admin/offers", adminAuth, async (req, res) => {
   try {
