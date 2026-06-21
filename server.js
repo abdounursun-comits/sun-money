@@ -142,47 +142,74 @@ app.post("/register", async (req, res) => {
 
   res.json({ success: true });
 });
-app.post("/admin/login", (req, res) => {
-  const { password } = req.body;
 
-  if (password !== ADMIN_SECRET) {
-    return res.status(401).json({
-      error: "Wrong password"
+app.post("/admin/login", (req, res) => {
+  const { username, password } = req.body;
+
+  if (
+    username === "sunadmin" &&
+    password === "sun2026"
+  ) {
+    const token = jwt.sign(
+      { admin: true },
+      ADMIN_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    return res.json({
+      success: true,
+      token
     });
   }
 
-  const token = jwt.sign(
-    { admin: true },
-    ADMIN_SECRET,
-    { expiresIn: "7d" }
-  );
-
-  res.json({
-    success: true,
-    token
+  res.status(401).json({
+    error: "Invalid admin credentials"
   });
 });
 // ================= LOGIN =================
 app.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
-  const r = await pool.query("SELECT * FROM users WHERE email=$1", [email]);
-  if (!r.rows.length) return res.status(400).json({ error: "Invalid" });
+  const r = await pool.query(
+    "SELECT * FROM users WHERE email=$1",
+    [email]
+  );
+
+  if (!r.rows.length) {
+    return res.status(400).json({
+      error: "Invalid"
+    });
+  }
 
   const user = r.rows[0];
 
-  const ok = await bcrypt.compare(password, user.password);
-  if (!ok) return res.status(400).json({ error: "Invalid" });
-
-  const token = jwt.sign(
-    { id: user.id, email: user.email },
-    JWT_SECRET,
-    { expiresIn: "7d" }
+  const ok = await bcrypt.compare(
+    password,
+    user.password
   );
 
-  res.json({ token, user });
-});
+  if (!ok) {
+    return res.status(400).json({
+      error: "Invalid"
+    });
+  }
 
+  const token = jwt.sign(
+    {
+      id: user.id,
+      email: user.email
+    },
+    JWT_SECRET,
+    {
+      expiresIn: "7d"
+    }
+  );
+
+  res.json({
+    token,
+    user
+  });
+});
 
 // ================= OFFERS PAGE =================
 app.get("/offers", (req, res) => {

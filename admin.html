@@ -1,307 +1,280 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
 <title>Sun Money Admin</title>
 
 <style>
-body {
-    font-family: Arial;
-    background: #f4f6f9;
-    margin: 0;
+body{
+font-family:Arial;
+background:#f5f5f5;
+padding:20px;
 }
 
-header {
-    background: #111;
-    color: white;
-    padding: 15px;
-    text-align: center;
-    font-size: 22px;
+.card{
+background:white;
+padding:20px;
+margin-bottom:20px;
+border-radius:10px;
 }
 
-.container {
-    max-width: 1200px;
-    margin: auto;
-    padding: 15px;
+input{
+width:100%;
+padding:10px;
+margin:5px 0;
 }
 
-.card {
-    background: white;
-    padding: 15px;
-    margin: 10px 0;
-    border-radius: 10px;
-}
-
-button {
-    padding: 8px;
-    margin: 3px;
-    cursor: pointer;
-}
-
-table {
-    width: 100%;
-    border-collapse: collapse;
-}
-
-th, td {
-    border: 1px solid #ddd;
-    padding: 8px;
-    text-align: center;
-}
-
-th {
-    background: #eee;
+button{
+padding:10px 20px;
+cursor:pointer;
 }
 </style>
-</head>
 
+</head>
 <body>
 
-<header>⚙️ Sun Money Admin Panel</header>
+<div id="loginBox" class="card">
 
-<div class="container">
+<h2>Admin Login</h2>
 
-<!-- STATS -->
-<div class="card">
-    <h3>📊 Dashboard</h3>
-    <p>Users: <span id="users">0</span></p>
-    <p>Clicks: <span id="clicks">0</span></p>
-    <p>Total Balance: $<span id="balance">0</span></p>
+<input id="username" placeholder="Username">
+
+<input
+id="password"
+type="password"
+placeholder="Password">
+
+<button onclick="login()">
+Login
+</button>
+
 </div>
 
-<!-- USERS -->
+<div id="panel" style="display:none">
+
 <div class="card">
-    <h3>👥 All Users</h3>
-    <button onclick="loadUsers()">Refresh Users</button>
-    <div id="usersTable"></div>
+
+<h2>Dashboard</h2>
+
+<p>Users: <span id="users">0</span></p>
+
+<p>Offers: <span id="offers">0</span></p>
+
+<p>Withdrawals: <span id="withdrawals">0</span></p>
+
+<p>Total Balance: $<span id="balance">0</span></p>
+
 </div>
 
-<!-- OFFERS -->
 <div class="card">
-    <h3>🎯 Offers</h3>
 
-    <input id="title" placeholder="Title">
-    <input id="url" placeholder="URL">
-    <input id="reward" placeholder="Reward">
+<h2>Users</h2>
 
-    <button onclick="createOffer()">Create Offer</button>
+<div id="userList"></div>
 
-    <div id="offersTable"></div>
 </div>
 
-<!-- WITHDRAWALS -->
 <div class="card">
-    <h3>💰 Withdraw Requests</h3>
-    <button onclick="loadWithdrawals()">Refresh Withdrawals</button>
-    <div id="withdrawTable"></div>
+
+<h2>Withdrawals</h2>
+
+<div id="withdrawList"></div>
+
 </div>
 
 </div>
 
 <script>
 
-const API = "https://sun-money.onrender.com";
-const token = localStorage.getItem("admin_token");
+const API =
+"https://sun-money.onrender.com";
 
-if(!token){
-    alert("Admin login required");
-    window.location.href = "/auth.html";
+async function login(){
+
+const username =
+document.getElementById("username").value;
+
+const password =
+document.getElementById("password").value;
+
+const res = await fetch(
+API + "/admin/login",
+{
+method:"POST",
+headers:{
+"Content-Type":"application/json"
+},
+body:JSON.stringify({
+username,
+password
+})
+}
+);
+
+const data =
+await res.json();
+
+if(data.token){
+
+localStorage.setItem(
+"adminToken",
+data.token
+);
+
+document.getElementById(
+"loginBox"
+).style.display="none";
+
+document.getElementById(
+"panel"
+).style.display="block";
+
+loadDashboard();
+
+}else{
+
+alert("Login failed");
+
 }
 
-// ================= STATS =================
-async function loadStats(){
-    const res = await fetch(API + "/admin/stats", {
-        headers: { Authorization: "Bearer " + token }
-    });
-
-    const data = await res.json();
-
-    document.getElementById("users").innerText = data.users;
-    document.getElementById("clicks").innerText = data.clicks;
-    document.getElementById("balance").innerText = data.balance;
 }
 
-// ================= USERS =================
-async function loadUsers(){
-    const res = await fetch(API + "/admin/users", {
-        headers: { Authorization: "Bearer " + token }
-    });
+async function loadDashboard(){
 
-    const users = await res.json();
+const token =
+localStorage.getItem(
+"adminToken"
+);
 
-    let html = `<table>
-    <tr>
-        <th>ID</th>
-        <th>Email</th>
-        <th>Balance</th>
-    </tr>`;
-
-    users.forEach(u => {
-        html += `
-        <tr>
-            <td>${u.id}</td>
-            <td>${u.email}</td>
-            <td>$${u.balance}</td>
-        </tr>`;
-    });
-
-    html += "</table>";
-
-    document.getElementById("usersTable").innerHTML = html;
+const dash =
+await fetch(
+API + "/admin/dashboard",
+{
+headers:{
+Authorization:
+"Bearer " + token
 }
-
-// ================= OFFERS =================
-async function createOffer(){
-    const title = document.getElementById("title").value;
-    const url = document.getElementById("url").value;
-    const reward = document.getElementById("reward").value;
-
-    await fetch(API + "/admin/offers", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            Authorization: "Bearer " + token
-        },
-        body: JSON.stringify({ title, url, reward })
-    });
-
-    loadOffers();
 }
+);
 
-async function loadOffers(){
-    const res = await fetch(API + "/admin/offers", {
-        headers: { Authorization: "Bearer " + token }
-    });
+const d =
+await dash.json();
 
-    const offers = await res.json();
+document.getElementById(
+"users"
+).innerText = d.users;
 
-    let html = `<table>
-    <tr>
-        <th>ID</th>
-        <th>Title</th>
-        <th>Reward</th>
-        <th>Status</th>
-        <th>Action</th>
-    </tr>`;
+document.getElementById(
+"offers"
+).innerText = d.offers;
 
-    offers.forEach(o => {
-        html += `
-        <tr>
-            <td>${o.id}</td>
-            <td>${o.title}</td>
-            <td>$${o.reward}</td>
-            <td>${o.active}</td>
-            <td>
-                <button onclick="disableOffer(${o.id})">Disable</button>
-                <button onclick="enableOffer(${o.id})">Enable</button>
-                <button onclick="deleteOffer(${o.id})">Delete</button>
-            </td>
-        </tr>`;
-    });
+document.getElementById(
+"withdrawals"
+).innerText =
+d.withdrawals;
 
-    html += "</table>";
+document.getElementById(
+"balance"
+).innerText =
+d.balance;
 
-    document.getElementById("offersTable").innerHTML = html;
-}
-
-// offer actions
-async function disableOffer(id){
-    await fetch(API + "/admin/offers/" + id + "/disable", {
-        method: "POST",
-        headers: { Authorization: "Bearer " + token }
-    });
-    loadOffers();
-}
-
-async function enableOffer(id){
-    await fetch(API + "/admin/offers/" + id + "/enable", {
-        method: "POST",
-        headers: { Authorization: "Bearer " + token }
-    });
-    loadOffers();
-}
-
-async function deleteOffer(id){
-    await fetch(API + "/admin/offers/" + id, {
-        method: "DELETE",
-        headers: { Authorization: "Bearer " + token }
-    });
-    loadOffers();
-}
-
-// ================= WITHDRAWALS =================
-async function loadWithdrawals(){
-    const res = await fetch(API + "/admin/withdrawals", {
-        headers: { Authorization: "Bearer " + token }
-    });
-
-    const data = await res.json();
-
-    let html = `<table>
-    <tr>
-        <th>ID</th>
-        <th>Email</th>
-        <th>Method</th>
-        <th>Amount</th>
-        <th>Status</th>
-        <th>Action</th>
-    </tr>`;
-
-    data.forEach(w => {
-        html += `
-        <tr>
-            <td>${w.id}</td>
-            <td>${w.email}</td>
-            <td>${w.method}</td>
-            <td>$${w.amount}</td>
-            <td>${w.status}</td>
-            <td>
-                <button onclick="approve(${w.id})">Approve</button>
-                <button onclick="reject(${w.id})">Reject</button>
-            </td>
-        </tr>`;
-    });
-
-    html += "</table>";
-
-    document.getElementById("withdrawTable").innerHTML = html;
-}
-
-// approve withdraw
-async function approve(id){
-    await fetch(API + "/admin/withdraw/approve", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            Authorization: "Bearer " + token
-        },
-        body: JSON.stringify({ id })
-    });
-
-    loadWithdrawals();
-}
-
-// reject withdraw
-async function reject(id){
-    await fetch(API + "/admin/withdraw/reject", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            Authorization: "Bearer " + token
-        },
-        body: JSON.stringify({ id })
-    });
-
-    loadWithdrawals();
-}
-
-// init
-loadStats();
-loadOffers();
 loadUsers();
+
 loadWithdrawals();
 
-setInterval(loadStats, 5000);
+}
+
+async function loadUsers(){
+
+const token =
+localStorage.getItem(
+"adminToken"
+);
+
+const res =
+await fetch(
+API + "/admin/users",
+{
+headers:{
+Authorization:
+"Bearer " + token
+}
+}
+);
+
+const users =
+await res.json();
+
+let html = "";
+
+users.forEach(u=>{
+
+html += `
+<div>
+${u.id}
+-
+${u.username}
+-
+${u.email}
+-
+$${u.balance}
+</div>
+`;
+
+});
+
+document.getElementById(
+"userList"
+).innerHTML = html;
+
+}
+
+async function loadWithdrawals(){
+
+const token =
+localStorage.getItem(
+"adminToken"
+);
+
+const res =
+await fetch(
+API + "/admin/withdrawals",
+{
+headers:{
+Authorization:
+"Bearer " + token
+}
+}
+);
+
+const rows =
+await res.json();
+
+let html = "";
+
+rows.forEach(w=>{
+
+html += `
+<div style="margin-bottom:10px">
+
+#${w.id}
+-
+${w.email}
+-
+$${w.amount}
+-
+${w.status}
+
+</div>
+`;
+
+});
+
+document.getElementById(
+"withdrawList"
+).innerHTML = html;
+
+}
 
 </script>
 

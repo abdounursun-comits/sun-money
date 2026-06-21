@@ -1,45 +1,283 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Withdraw</title>
-  <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Withdraw - Sun Money</title>
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Arial,sans-serif;
+}
+
+body{
+background:#f4f6f9;
+padding:20px;
+}
+
+.header{
+background:#ff9800;
+color:white;
+padding:20px;
+border-radius:15px;
+margin-bottom:20px;
+}
+
+.balance-card{
+background:linear-gradient(135deg,#ff9800,#ffb74d);
+color:white;
+padding:25px;
+border-radius:15px;
+margin-bottom:20px;
+}
+
+.balance-card h1{
+font-size:45px;
+margin-top:10px;
+}
+
+.pending{
+background:white;
+color:#333;
+padding:12px;
+border-radius:10px;
+margin-top:20px;
+}
+
+.grid{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:20px;
+}
+
+.card{
+background:white;
+padding:20px;
+border-radius:15px;
+box-shadow:0 3px 10px rgba(0,0,0,.08);
+}
+
+.card h2{
+margin-bottom:20px;
+}
+
+label{
+display:block;
+margin-top:15px;
+margin-bottom:5px;
+font-weight:bold;
+}
+
+input,
+select{
+width:100%;
+padding:12px;
+border:1px solid #ddd;
+border-radius:10px;
+}
+
+.btn{
+width:100%;
+padding:15px;
+background:#ff9800;
+border:none;
+color:white;
+font-size:18px;
+border-radius:10px;
+cursor:pointer;
+margin-top:20px;
+}
+
+.btn:hover{
+background:#f57c00;
+}
+
+.history-item{
+display:flex;
+justify-content:space-between;
+padding:15px;
+border-bottom:1px solid #eee;
+}
+
+.approved{
+color:green;
+font-weight:bold;
+}
+
+.pending-status{
+color:orange;
+font-weight:bold;
+}
+
+.rejected{
+color:red;
+font-weight:bold;
+}
+
+.note{
+margin-top:20px;
+background:#e8f5e9;
+padding:20px;
+border-radius:15px;
+}
+
+@media(max-width:900px){
+
+.grid{
+grid-template-columns:1fr;
+}
+
+}
+
+</style>
 </head>
 <body>
 
-<div class="container">
+<div class="header">
+<h1>💰 Withdraw Funds</h1>
+<p>Request your earnings anytime.</p>
+</div>
 
-  <h1>Withdraw 💸</h1>
+<div class="balance-card">
 
-  <div class="card">
-    <input id="method" placeholder="Method (MTN / Airtel / Bank)">
-    <input id="account" placeholder="Account Number">
-    <input id="amount" placeholder="Amount">
+<h3>Available Balance</h3>
 
-    <button onclick="withdraw()">Submit</button>
-  </div>
+<h1>$<span id="balance">25.40</span></h1>
+
+<div class="pending">
+Pending Withdrawal:
+<b>$10.00</b>
+</div>
+
+</div>
+
+<div class="grid">
+
+<div class="card">
+
+<h2>📤 Request Withdrawal</h2>
+
+<label>Method</label>
+
+<select id="method">
+<option>Mobile Money</option>
+<option>Bank Transfer</option>
+<option>PayPal</option>
+</select>
+
+<label>Account Number</label>
+
+<input
+type="text"
+id="account"
+placeholder="07xxxxxxxx">
+
+<label>Amount</label>
+
+<input
+type="number"
+id="amount"
+placeholder="10">
+
+<button class="btn" onclick="withdraw()">
+Request Withdrawal
+</button>
+
+</div>
+
+<div class="card">
+
+<h2>📜 Withdrawal History</h2>
+
+<div class="history-item">
+<span>#15</span>
+<span>$20</span>
+<span class="approved">Approved</span>
+</div>
+
+<div class="history-item">
+<span>#14</span>
+<span>$10</span>
+<span class="pending-status">Pending</span>
+</div>
+
+<div class="history-item">
+<span>#13</span>
+<span>$5</span>
+<span class="rejected">Rejected</span>
+</div>
+
+</div>
+
+</div>
+
+<div class="note">
+
+<h3>🔒 Secure Withdrawals</h3>
+
+<br>
+
+<p>
+Withdrawals are reviewed manually by admin.
+Processing usually takes 24-48 hours.
+</p>
 
 </div>
 
 <script>
-const token = localStorage.getItem("token");
+
+const API =
+"https://sun-money.onrender.com";
 
 async function withdraw(){
-  const res = await fetch("/withdraw", {
-    method:"POST",
-    headers:{
-      "Content-Type":"application/json",
-      Authorization:"Bearer "+token
-    },
-    body: JSON.stringify({
-      method: method.value,
-      account: account.value,
-      amount: amount.value
-    })
-  });
 
-  const data = await res.json();
-  alert(JSON.stringify(data));
+const token =
+localStorage.getItem("token");
+
+const method =
+document.getElementById("method").value;
+
+const account =
+document.getElementById("account").value;
+
+const amount =
+document.getElementById("amount").value;
+
+const res =
+await fetch(API + "/withdraw",{
+method:"POST",
+headers:{
+"Content-Type":"application/json",
+Authorization:"Bearer "+token
+},
+body:JSON.stringify({
+method,
+account,
+amount
+})
+});
+
+const data =
+await res.json();
+
+if(data.success){
+
+alert("Withdrawal submitted");
+
+location.reload();
+
+}else{
+
+alert(data.error || "Error");
+
 }
+
+}
+
 </script>
 
 </body>
