@@ -645,8 +645,72 @@ app.get("/admin/users", adminAuth, async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 });
+app.get("/test-users", async (req, res) => {
+  const result = await pool.query("SELECT * FROM users");
+  res.json(result.rows);
+});
+app.get("/admin/dashboard", adminAuth, async (req, res) => {
 
+  const users = await pool.query(
+    "SELECT COUNT(*) FROM users"
+  );
 
+  const offers = await pool.query(
+    "SELECT COUNT(*) FROM offers"
+  );
+
+  const withdrawals = await pool.query(
+    "SELECT COUNT(*) FROM withdrawals"
+  );
+
+  const clicks = await pool.query(
+    "SELECT COUNT(*) FROM clicks"
+  );
+
+  const balance = await pool.query(
+    "SELECT COALESCE(SUM(balance),0) total FROM users"
+  );
+
+  res.json({
+    users: users.rows[0].count,
+    offers: offers.rows[0].count,
+    withdrawals: withdrawals.rows[0].count,
+    clicks: clicks.rows[0].count,
+    balance: balance.rows[0].total
+  });
+});
+// Update user balance
+app.post("/admin/user/balance", adminAuth, async (req, res) => {
+  const { id, balance } = req.body;
+
+  await pool.query(
+    "UPDATE users SET balance=$1 WHERE id=$2",
+    [balance, id]
+  );
+
+  res.json({ success: true });
+});
+
+// Delete user
+app.delete("/admin/users/:id", adminAuth, async (req, res) => {
+  await pool.query(
+    "DELETE FROM users WHERE id=$1",
+    [req.params.id]
+  );
+
+  res.json({ success: true });
+});
+
+// Admin clicks API
+app.get("/admin/api/clicks", adminAuth, async (req, res) => {
+  const result = await pool.query(`
+    SELECT *
+    FROM clicks
+    ORDER BY created_at DESC
+  `);
+
+  res.json(result.rows);
+});
 // ================= START =================
 app.listen(PORT, () => {
   console.log("🚀 CPA SYSTEM V2 RUNNING ON", PORT);

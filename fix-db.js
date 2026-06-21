@@ -6,21 +6,17 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false }
 });
 
-async function fix() {
+async function fixDB() {
   try {
-    await pool.query(`
-      ALTER TABLE users
-      ADD COLUMN IF NOT EXISTS referral_code TEXT;
-    `);
-
-    await pool.query(`
-      ALTER TABLE users
-      ADD COLUMN IF NOT EXISTS referred_by TEXT;
-    `);
 
     await pool.query(`
       ALTER TABLE users
       ADD COLUMN IF NOT EXISTS pending_withdrawal NUMERIC DEFAULT 0;
+    `);
+
+    await pool.query(`
+      ALTER TABLE users
+      ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
     `);
 
     await pool.query(`
@@ -33,20 +29,13 @@ async function fix() {
       ADD COLUMN IF NOT EXISTS payout NUMERIC DEFAULT 0;
     `);
 
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS notifications (
-        id SERIAL PRIMARY KEY,
-        user_id INTEGER,
-        message TEXT,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      );
-    `);
+    console.log("✅ Database updated successfully");
 
-    console.log("✅ Database fixed");
-    process.exit();
   } catch (err) {
-    console.error(err);
+    console.error("❌ Error:", err);
+  } finally {
+    await pool.end();
   }
 }
 
-fix();
+fixDB();
