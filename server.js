@@ -271,16 +271,16 @@ app.get("/notifications/:userId", auth, async (req, res) => {
 // ================= GET ACTIVE OFFERS API =================
 app.get("/api/offers", async (req, res) => {
   try {
-    const result = await pool.query(
-      `SELECT id, title, url, reward
-       FROM offers
-       WHERE active = true
-       ORDER BY id DESC`
-    );
+    const result = await pool.query(`
+      SELECT id, title, url, reward, active
+      FROM offers
+      WHERE active = true
+      ORDER BY id DESC
+    `);
 
     res.json(result.rows);
   } catch (err) {
-    console.error("Offers error:", err);
+    console.error("GET OFFERS ERROR:", err);
     res.status(500).json({ error: "Server error" });
   }
 });
