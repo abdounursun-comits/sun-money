@@ -144,27 +144,43 @@ app.post("/register", async (req, res) => {
 });
 
 app.post("/admin/login", (req, res) => {
-  const { username, password } = req.body;
+  try {
+    const { username, password } = req.body;
 
-  if (
-    username === "sunadmin" &&
-    password === "sun2026"
-  ) {
-    const token = jwt.sign(
-      { admin: true },
-      ADMIN_SECRET,
-      { expiresIn: "7d" }
-    );
+    if (!username || !password) {
+      return res.json({
+        success: false,
+        error: "Missing credentials"
+      });
+    }
+
+    if (username === "sunadmin" && password === "sun2026") {
+
+      const token = jwt.sign(
+        { admin: true },
+        ADMIN_SECRET,
+        { expiresIn: "7d" }
+      );
+
+      return res.json({
+        success: true,
+        token
+      });
+    }
 
     return res.json({
-      success: true,
-      token
+      success: false,
+      error: "Invalid admin credentials"
+    });
+
+  } catch (err) {
+    console.error("ADMIN LOGIN ERROR:", err);
+
+    return res.status(500).json({
+      success: false,
+      error: "Server error"
     });
   }
-
-  res.status(401).json({
-    error: "Invalid admin credentials"
-  });
 });
 // ================= LOGIN =================
 app.post("/login", async (req, res) => {
