@@ -297,16 +297,43 @@ app.post("/admin/offers/:id/enable", adminAuth, async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 });
-app.delete("/admin/offers/:id", adminAuth, async (req, res) => {
+app.get("/admin/offers", adminAuth, async (req, res) => {
   try {
-    await pool.query(
-      `DELETE FROM offers WHERE id = $1`,
-      [req.params.id]
+    const result = await pool.query(`
+      SELECT *
+      FROM offers
+      ORDER BY id DESC
+    `);
+
+    res.json(result.rows);
+  } catch (err) {
+    console.error("ADMIN OFFERS ERROR:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+app.post("/admin/offers", adminAuth, async (req, res) => {
+  try {
+    const { title, url, reward } = req.body;
+
+    if (!title || !url) {
+      return res.status(400).json({ error: "Title and URL required" });
+    }
+
+    const result = await pool.query(
+      `INSERT INTO offers(title, url, reward, active)
+       VALUES($1,$2,$3,true)
+       RETURNING *`,
+      [title, url, reward || 0.20]
     );
 
-    res.json({ success: true });
+    res.json({
+      success: true,
+      offer: result.rows[0]
+    });
+
   } catch (err) {
-    console.error(err);
+    console.error("CREATE OFFER ERROR:", err);
     res.status(500).json({ error: "Server error" });
   }
 });
@@ -408,8 +435,13 @@ app.delete("/admin/offers/:id", adminAuth, async (req, res) => {
 // ================= CLICK TRACKING (ANTI FRAUD) =================
 app.get("/click/:offerId", async (req, res) => {
   try {
-    const offerId = req.params.offerId;
-    const email = req.query.email || "";
+    const { offerId } = req.params;
+    const { email } = req.query;
+
+    if (!email) {
+      return res.status(400).send("Missing email");
+    }
+
     const ip =
       req.headers["x-forwarded-for"] ||
       req.socket.remoteAddress ||
@@ -425,7 +457,7 @@ app.get("/click/:offerId", async (req, res) => {
     }
 
     const click = await pool.query(
-      `INSERT INTO clicks(offer_id,email,ip)
+      `INSERT INTO clicks(offer_id, email, ip)
        VALUES($1,$2,$3)
        RETURNING id`,
       [offerId, email, ip]
@@ -442,11 +474,13 @@ app.get("/click/:offerId", async (req, res) => {
     }
 
     res.redirect(url);
+
   } catch (err) {
-    console.error(err);
+    console.error("CLICK ERROR:", err);
     res.status(500).send("Error");
   }
 });
+
 app.get('/admin/clicks', async (req, res) => {
   const result = await pool.query(
     `SELECT * FROM clicks
@@ -513,24 +547,24 @@ app.get("/postback", async (req, res) => {
 
     const reward = Number(offer.rows[0].reward);
 
-    // mark conversion first
+    // mark conversion
     await pool.query(
       "UPDATE clicks SET converted=true, payout=$1 WHERE id=$2",
       [reward, click_id]
     );
 
-    // DIRECT USER CREDIT (THIS IS YOUR MODEL)
+    // credit user
     await pool.query(
       "UPDATE users SET balance = balance + $1 WHERE email=$2",
       [reward, c.email]
     );
 
-    console.log(`✅ USER PAID: ${c.email} +${reward}`);
+    console.log(`✅ PAID: ${c.email} +${reward}`);
 
     res.send("OK");
 
   } catch (err) {
-    console.error(err);
+    console.error("POSTBACK ERROR:", err);
     res.status(500).send("ERROR");
   }
 });
