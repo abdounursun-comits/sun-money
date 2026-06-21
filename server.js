@@ -112,6 +112,7 @@ function adminAuth(req, res, next) {
     next();
   });
 }
+
 app.get("/", (req, res) => {
   res.redirect("/auth");
 });
@@ -607,6 +608,18 @@ app.post("/admin/withdraw/reject", adminAuth, async (req, res) => {
 
   res.json({ success: true });
 });
+app.get("/admin/withdrawals", adminAuth, async (req, res) => {
+  try {
+    const result = await pool.query(
+      "SELECT * FROM withdrawals ORDER BY created_at DESC"
+    );
+
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
 // ================= ADMIN STATS =================
 app.get("/admin/stats", adminAuth, async (req, res) => {
   const users = await pool.query("SELECT COUNT(*) FROM users");
@@ -618,6 +631,19 @@ app.get("/admin/stats", adminAuth, async (req, res) => {
     clicks: clicks.rows[0].count,
     balance: balance.rows[0].sum || 0
   });
+});
+
+app.get("/admin/users", adminAuth, async (req, res) => {
+  try {
+    const result = await pool.query(
+      "SELECT id, username, email, balance, created_at FROM users ORDER BY id DESC"
+    );
+
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Server error" });
+  }
 });
 
 

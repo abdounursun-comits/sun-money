@@ -1,281 +1,324 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Sun Money Admin</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sun Money Admin Panel</title>
 
 <style>
 body{
-font-family:Arial;
-background:#f5f5f5;
-padding:20px;
+  margin:0;
+  font-family:Arial;
+  background:linear-gradient(135deg,#0f172a,#1e293b);
+  color:white;
+}
+
+.sidebar{
+  position:fixed;
+  width:220px;
+  height:100vh;
+  background:#111827;
+  padding:20px;
+}
+
+.sidebar h2{
+  color:#ff9800;
+}
+
+.sidebar a{
+  display:block;
+  color:#ccc;
+  padding:10px;
+  text-decoration:none;
+  margin:5px 0;
+  border-radius:8px;
+}
+
+.sidebar a:hover{
+  background:#ff9800;
+  color:black;
+}
+
+.main{
+  margin-left:240px;
+  padding:20px;
+}
+
+.cards{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:15px;
 }
 
 .card{
-background:white;
-padding:20px;
-margin-bottom:20px;
-border-radius:10px;
+  background:#1f2937;
+  padding:20px;
+  border-radius:12px;
 }
+
+.card h3{color:#ff9800;}
+
+.section{
+  margin-top:30px;
+}
+
+table{
+  width:100%;
+  margin-top:10px;
+  border-collapse:collapse;
+  background:#1f2937;
+  border-radius:10px;
+  overflow:hidden;
+}
+
+th,td{
+  padding:10px;
+  border-bottom:1px solid #333;
+}
+
+th{
+  background:#111827;
+  color:#ff9800;
+}
+
+.btn{
+  padding:5px 10px;
+  border:none;
+  border-radius:6px;
+  cursor:pointer;
+  margin:2px;
+}
+
+.approve{background:#28a745;color:white;}
+.reject{background:#e53935;color:white;}
+.disable{background:#f57c00;color:white;}
+.enable{background:#2196f3;color:white;}
+.delete{background:#444;color:white;}
 
 input{
-width:100%;
-padding:10px;
-margin:5px 0;
+  padding:10px;
+  margin:5px;
+  border-radius:8px;
+  border:none;
+  width:200px;
 }
 
-button{
-padding:10px 20px;
-cursor:pointer;
+.createBox{
+  background:#1f2937;
+  padding:15px;
+  border-radius:10px;
+  margin-top:10px;
 }
 </style>
-
 </head>
+
 <body>
 
-<div id="loginBox" class="card">
-
-<h2>Admin Login</h2>
-
-<input id="username" placeholder="Username">
-
-<input
-id="password"
-type="password"
-placeholder="Password">
-
-<button onclick="login()">
-Login
-</button>
-
+<div class="sidebar">
+  <h2>💰 Sun Admin</h2>
+  <a href="#users">Users</a>
+  <a href="#withdrawals">Withdrawals</a>
+  <a href="#offers">Offers</a>
 </div>
 
-<div id="panel" style="display:none">
+<div class="main">
 
-<div class="card">
+<h1>📊 Admin Dashboard</h1>
 
-<h2>Dashboard</h2>
+<div class="cards">
+  <div class="card">
+    <h3>Users</h3>
+    <p id="usersCount">0</p>
+  </div>
 
-<p>Users: <span id="users">0</span></p>
+  <div class="card">
+    <h3>Clicks</h3>
+    <p id="clicksCount">0</p>
+  </div>
 
-<p>Offers: <span id="offers">0</span></p>
-
-<p>Withdrawals: <span id="withdrawals">0</span></p>
-
-<p>Total Balance: $<span id="balance">0</span></p>
-
+  <div class="card">
+    <h3>Total Balance</h3>
+    <p>$<span id="balanceSum">0</span></p>
+  </div>
 </div>
 
-<div class="card">
-
-<h2>Users</h2>
-
-<div id="userList"></div>
-
+<!-- USERS -->
+<div class="section" id="users">
+<h2>👥 Users</h2>
+<table id="usersTable">
+<tr>
+<th>ID</th><th>Username</th><th>Email</th><th>Balance</th>
+</tr>
+</table>
 </div>
 
-<div class="card">
+<!-- WITHDRAWALS -->
+<div class="section" id="withdrawals">
+<h2>💸 Withdrawals</h2>
+<table id="withdrawTable">
+<tr>
+<th>ID</th><th>Email</th><th>Amount</th><th>Status</th><th>Action</th>
+</tr>
+</table>
+</div>
 
-<h2>Withdrawals</h2>
+<!-- OFFERS -->
+<div class="section" id="offers">
+<h2>🎯 Offers</h2>
 
-<div id="withdrawList"></div>
+<div class="createBox">
+  <input id="title" placeholder="Offer title">
+  <input id="url" placeholder="Offer URL">
+  <input id="reward" placeholder="Reward ($)">
+  <button class="btn approve" onclick="createOffer()">Create Offer</button>
+</div>
 
+<table id="offersTable">
+<tr>
+<th>ID</th><th>Title</th><th>Reward</th><th>Status</th><th>Actions</th>
+</tr>
+</table>
 </div>
 
 </div>
 
 <script>
+const API = "https://sun-money.onrender.com";
+const token = localStorage.getItem("adminToken");
 
-const API =
-"https://sun-money.onrender.com";
-
-async function login(){
-
-const username =
-document.getElementById("username").value;
-
-const password =
-document.getElementById("password").value;
-
-const res = await fetch(
-API + "/admin/login",
-{
-method:"POST",
-headers:{
-"Content-Type":"application/json"
-},
-body:JSON.stringify({
-username,
-password
-})
-}
-);
-
-const data =
-await res.json();
-
-if(data.token){
-
-localStorage.setItem(
-"adminToken",
-data.token
-);
-
-document.getElementById(
-"loginBox"
-).style.display="none";
-
-document.getElementById(
-"panel"
-).style.display="block";
-
-loadDashboard();
-
-}else{
-
-alert("Login failed");
-
-}
-
-}
-
-async function loadDashboard(){
-
-const token =
-localStorage.getItem(
-"adminToken"
-);
-
-const dash =
-await fetch(
-API + "/admin/dashboard",
-{
-headers:{
-Authorization:
-"Bearer " + token
-}
-}
-);
-
-const d =
-await dash.json();
-
-document.getElementById(
-"users"
-).innerText = d.users;
-
-document.getElementById(
-"offers"
-).innerText = d.offers;
-
-document.getElementById(
-"withdrawals"
-).innerText =
-d.withdrawals;
-
-document.getElementById(
-"balance"
-).innerText =
-d.balance;
-
-loadUsers();
-
-loadWithdrawals();
-
-}
-
+/* ================= USERS ================= */
 async function loadUsers(){
+  const res = await fetch(API+"/admin/users",{headers:{Authorization:"Bearer "+token}});
+  const data = await res.json();
 
-const token =
-localStorage.getItem(
-"adminToken"
-);
+  document.getElementById("usersCount").innerText = data.length;
 
-const res =
-await fetch(
-API + "/admin/users",
-{
-headers:{
-Authorization:
-"Bearer " + token
-}
-}
-);
-
-const users =
-await res.json();
-
-let html = "";
-
-users.forEach(u=>{
-
-html += `
-<div>
-${u.id}
--
-${u.username}
--
-${u.email}
--
-$${u.balance}
-</div>
-`;
-
-});
-
-document.getElementById(
-"userList"
-).innerHTML = html;
-
+  const table = document.getElementById("usersTable");
+  data.forEach(u=>{
+    table.innerHTML += `
+    <tr>
+      <td>${u.id}</td>
+      <td>${u.username||"-"}</td>
+      <td>${u.email}</td>
+      <td>$${u.balance}</td>
+    </tr>`;
+  });
 }
 
+/* ================= WITHDRAWALS ================= */
 async function loadWithdrawals(){
+  const res = await fetch(API+"/admin/withdrawals",{headers:{Authorization:"Bearer "+token}});
+  const data = await res.json();
 
-const token =
-localStorage.getItem(
-"adminToken"
-);
+  const table = document.getElementById("withdrawTable");
 
-const res =
-await fetch(
-API + "/admin/withdrawals",
-{
-headers:{
-Authorization:
-"Bearer " + token
-}
-}
-);
-
-const rows =
-await res.json();
-
-let html = "";
-
-rows.forEach(w=>{
-
-html += `
-<div style="margin-bottom:10px">
-
-#${w.id}
--
-${w.email}
--
-$${w.amount}
--
-${w.status}
-
-</div>
-`;
-
-});
-
-document.getElementById(
-"withdrawList"
-).innerHTML = html;
-
+  data.forEach(w=>{
+    table.innerHTML += `
+    <tr>
+      <td>${w.id}</td>
+      <td>${w.email}</td>
+      <td>$${w.amount}</td>
+      <td>${w.status}</td>
+      <td>
+        <button class="btn approve" onclick="approveW(${w.id})">Approve</button>
+        <button class="btn reject" onclick="rejectW(${w.id})">Reject</button>
+      </td>
+    </tr>`;
+  });
 }
 
+async function approveW(id){
+  await fetch(API+"/admin/withdraw/approve",{
+    method:"POST",
+    headers:{
+      "Content-Type":"application/json",
+      Authorization:"Bearer "+token
+    },
+    body:JSON.stringify({id})
+  });
+  location.reload();
+}
+
+async function rejectW(id){
+  await fetch(API+"/admin/withdraw/reject",{
+    method:"POST",
+    headers:{
+      "Content-Type":"application/json",
+      Authorization:"Bearer "+token
+    },
+    body:JSON.stringify({id})
+  });
+  location.reload();
+}
+
+/* ================= OFFERS ================= */
+async function loadOffers(){
+  const res = await fetch(API+"/admin/offers",{headers:{Authorization:"Bearer "+token}});
+  const data = await res.json();
+
+  const table = document.getElementById("offersTable");
+
+  data.forEach(o=>{
+    table.innerHTML += `
+    <tr>
+      <td>${o.id}</td>
+      <td>${o.title}</td>
+      <td>$${o.reward}</td>
+      <td>${o.active ? "Active" : "Disabled"}</td>
+      <td>
+        <button class="btn disable" onclick="disableOffer(${o.id})">Disable</button>
+        <button class="btn enable" onclick="enableOffer(${o.id})">Enable</button>
+        <button class="btn reject" onclick="deleteOffer(${o.id})">Delete</button>
+      </td>
+    </tr>`;
+  });
+}
+
+async function createOffer(){
+  const title = document.getElementById("title").value;
+  const url = document.getElementById("url").value;
+  const reward = document.getElementById("reward").value;
+
+  await fetch(API+"/admin/offers",{
+    method:"POST",
+    headers:{
+      "Content-Type":"application/json",
+      Authorization:"Bearer "+token
+    },
+    body:JSON.stringify({title,url,reward})
+  });
+
+  location.reload();
+}
+
+async function disableOffer(id){
+  await fetch(API+"/admin/offers/"+id+"/disable",{
+    method:"POST",
+    headers:{Authorization:"Bearer "+token}
+  });
+  location.reload();
+}
+
+async function enableOffer(id){
+  await fetch(API+"/admin/offers/"+id+"/enable",{
+    method:"POST",
+    headers:{Authorization:"Bearer "+token}
+  });
+  location.reload();
+}
+
+async function deleteOffer(id){
+  await fetch(API+"/admin/offers/"+id,{
+    method:"DELETE",
+    headers:{Authorization:"Bearer "+token}
+  });
+  location.reload();
+}
+
+/* ================= INIT ================= */
+loadUsers();
+loadWithdrawals();
+loadOffers();
 </script>
 
 </body>
