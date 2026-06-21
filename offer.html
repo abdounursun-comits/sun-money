@@ -1,37 +1,120 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Offers</title>
-  <link rel="stylesheet" href="style.css">
-</head>
-<body>
+<meta charset="UTF-8">
+<title>Offers - Sun Money</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<div class="container">
-
-  <h1>Offers 🎯</h1>
-  <div id="list"></div>
-
-</div>
-
-<script>
-const email = localStorage.getItem("email");
-
-async function load(){
-  const res = await fetch("/offers");
-  const data = await res.json();
-
-  list.innerHTML = data.map(o => `
-    <div class="card">
-      <h3>${o.title}</h3>
-      <p>${o.description || ""}</p>
-      <a href="/click/${o.id}?email=${email}">
-        <button>Start Offer</button>
-      </a>
-    </div>
-  `).join("");
+<style>
+body{
+  margin:0;
+  font-family:Arial;
+  background:#0f172a;
+  color:white;
 }
 
-load();
+.header{
+  padding:20px;
+  background:#111827;
+  text-align:center;
+}
+
+.header h1{
+  margin:0;
+  color:#ff9800;
+}
+
+.container{
+  padding:15px;
+}
+
+.offer{
+  background:#1f2937;
+  padding:15px;
+  margin-bottom:12px;
+  border-radius:10px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+.offer h3{
+  margin:0;
+}
+
+.reward{
+  color:#00ff88;
+  font-weight:bold;
+}
+
+.btn{
+  padding:10px 15px;
+  border:none;
+  border-radius:8px;
+  cursor:pointer;
+  background:#ff9800;
+  color:black;
+  font-weight:bold;
+}
+
+.btn:hover{
+  background:#ffa726;
+}
+
+.small{
+  font-size:12px;
+  color:#aaa;
+}
+</style>
+</head>
+
+<body>
+
+<div class="header">
+  <h1>🎯 Available Offers</h1>
+  <div class="small">Complete offers and earn rewards</div>
+</div>
+
+<div class="container" id="offers"></div>
+
+<script>
+const API = "https://sun-money.onrender.com";
+
+/* ================= LOAD OFFERS ================= */
+async function loadOffers(){
+  const res = await fetch(API+"/api/offers");
+  const data = await res.json();
+
+  const box = document.getElementById("offers");
+  box.innerHTML = "";
+
+  data.forEach(o=>{
+    box.innerHTML += `
+      <div class="offer">
+        <div>
+          <h3>${o.title}</h3>
+          <div class="reward">$${o.reward} Reward</div>
+        </div>
+
+        <button class="btn" onclick="goOffer(${o.id})">
+          Start
+        </button>
+      </div>
+    `;
+  });
+}
+
+/* ================= CLICK OFFER ================= */
+function goOffer(id){
+  const user = JSON.parse(localStorage.getItem("user"));
+
+  let email = user ? user.email : "";
+
+  window.location.href = API + "/click/" + id + "?email=" + email;
+}
+
+/* INIT */
+loadOffers();
 </script>
 
 </body>
