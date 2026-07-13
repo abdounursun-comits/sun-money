@@ -178,14 +178,14 @@ function show(page) {
 
 /* ================= DASHBOARD ================= */
 async function loadDashboard(){
-  const res = await fetch(API+"/admin/stats", {
+  const res = await fetch(API+"/admin/dashboard", {
     headers: { Authorization: "Bearer " + token }
   });
   const d = await res.json();
 
   document.getElementById("d_users").innerText = d.users;
   document.getElementById("d_clicks").innerText = d.clicks;
-  document.getElementById("d_balance").innerText = d.balance;
+  document.getElementById("d_balance").innerText = d.totalBalance;
 }
 
 /* ================= USERS ================= */

@@ -1832,7 +1832,29 @@ conversions.rows[0].count
 
 });
 
+app.get("/admin/users", adminAuth, async (req, res) => {
+  const result = await pool.query(`
+    SELECT
+      id,
+      username,
+      email,
+      balance,
+      created_at
+    FROM users
+    ORDER BY id DESC
+  `);
 
+  res.json(result.rows);
+});
+app.get("/admin/withdrawals", adminAuth, async (req, res) => {
+  const result = await pool.query(`
+    SELECT *
+    FROM withdrawals
+    ORDER BY created_at DESC
+  `);
+
+  res.json(result.rows);
+});
 
 
 

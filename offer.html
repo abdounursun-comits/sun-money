@@ -8,14 +8,14 @@
 <style>
 body{
   margin:0;
-  font-family:Arial;
+  font-family:Arial,sans-serif;
   background:#0f172a;
   color:white;
 }
 
 .header{
-  padding:20px;
   background:#111827;
+  padding:25px;
   text-align:center;
 }
 
@@ -24,97 +24,180 @@ body{
   color:#ff9800;
 }
 
+.header p{
+  color:#aaa;
+}
+
 .container{
-  padding:15px;
+  padding:20px;
 }
 
 .offer{
   background:#1f2937;
-  padding:15px;
-  margin-bottom:12px;
-  border-radius:10px;
+  padding:20px;
+  margin-bottom:15px;
+  border-radius:12px;
   display:flex;
   justify-content:space-between;
   align-items:center;
+  box-shadow:0 5px 15px rgba(0,0,0,0.3);
 }
 
 .offer h3{
-  margin:0;
+  margin:0 0 10px;
 }
 
 .reward{
   color:#00ff88;
+  font-size:18px;
   font-weight:bold;
 }
 
 .btn{
-  padding:10px 15px;
-  border:none;
-  border-radius:8px;
-  cursor:pointer;
   background:#ff9800;
   color:black;
+  border:none;
+  padding:12px 20px;
+  border-radius:8px;
+  cursor:pointer;
   font-weight:bold;
 }
 
 .btn:hover{
-  background:#ffa726;
+  background:#ffb74d;
 }
 
-.small{
-  font-size:12px;
+.message{
+  text-align:center;
+  margin-top:40px;
   color:#aaa;
 }
 </style>
+
 </head>
 
 <body>
 
 <div class="header">
-  <h1>🎯 Available Offers</h1>
-  <div class="small">Complete offers and earn rewards</div>
+<h1>🎯 Sun Money Offers</h1>
+<p>Complete offers and earn rewards</p>
 </div>
 
-<div class="container" id="offers"></div>
+
+<div class="container" id="offers">
+<div class="message">
+Loading offers...
+</div>
+</div>
+
 
 <script>
+
 const API = "https://sun-money.onrender.com";
 
-/* ================= LOAD OFFERS ================= */
+
 async function loadOffers(){
-  const res = await fetch(API+"/api/offers");
-  const data = await res.json();
 
-  const box = document.getElementById("offers");
-  box.innerHTML = "";
+    const box = document.getElementById("offers");
 
-  data.forEach(o=>{
-    box.innerHTML += `
-      <div class="offer">
-        <div>
-          <h3>${o.title}</h3>
-          <div class="reward">$${o.reward} Reward</div>
+    try{
+
+        const response = await fetch(API + "/api/offers");
+
+
+        if(!response.ok){
+            throw new Error("Server error");
+        }
+
+
+        const offers = await response.json();
+
+
+        box.innerHTML="";
+
+
+        if(offers.length === 0){
+
+            box.innerHTML = `
+            <div class="message">
+            No offers available right now.
+            </div>
+            `;
+
+            return;
+        }
+
+
+
+        offers.forEach(o=>{
+
+            box.innerHTML += `
+
+            <div class="offer">
+
+                <div>
+                    <h3>${o.title}</h3>
+
+                    <div class="reward">
+                    Earn $${o.reward}
+                    </div>
+                </div>
+
+
+                <button class="btn" onclick="startOffer(${o.id})">
+                    Start
+                </button>
+
+            </div>
+
+            `;
+
+        });
+
+
+    }
+    catch(error){
+
+        box.innerHTML = `
+        <div class="message">
+        Failed to load offers.
         </div>
+        `;
 
-        <button class="btn" onclick="goOffer(${o.id})">
-          Start
-        </button>
-      </div>
-    `;
-  });
+        console.log(error);
+
+    }
+
 }
 
-/* ================= CLICK OFFER ================= */
-function goOffer(id){
-  const user = JSON.parse(localStorage.getItem("user"));
 
-  let email = user ? user.email : "";
 
-  window.location.href = API + "/click/" + id + "?email=" + email;
+function startOffer(id){
+
+    let user = localStorage.getItem("user");
+
+    let email="";
+
+
+    if(user){
+
+        user = JSON.parse(user);
+        email=user.email;
+
+    }
+
+
+    window.location.href =
+    API + "/click/" + id +
+    "?email=" + encodeURIComponent(email);
+
 }
 
-/* INIT */
+
+
 loadOffers();
+
+
 </script>
 
 </body>
