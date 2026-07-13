@@ -1,386 +1,409 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8">
 <title>Sun Money Admin</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
-body {
-  margin: 0;
-  font-family: Arial;
-  background: #0f172a;
-  color: white;
+body{
+    margin:0;
+    font-family:Arial;
+    background:#0f172a;
+    color:white;
 }
 
-.sidebar {
-  position: fixed;
-  width: 220px;
-  height: 100vh;
-  background: #111827;
-  padding: 20px;
+header{
+    background:#111827;
+    padding:20px;
+    text-align:center;
+    color:#ff9800;
 }
 
-.sidebar h2 {
-  color: #ff9800;
+.container{
+    padding:20px;
 }
 
-.sidebar a {
-  display: block;
-  padding: 10px;
-  margin: 5px 0;
-  color: #ccc;
-  text-decoration: none;
-  border-radius: 8px;
-  cursor: pointer;
+.cards{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:15px;
 }
 
-.sidebar a:hover {
-  background: #ff9800;
-  color: black;
+.card{
+    background:#1f2937;
+    padding:20px;
+    border-radius:10px;
 }
 
-.main {
-  margin-left: 240px;
-  padding: 20px;
+table{
+    width:100%;
+    margin-top:20px;
+    border-collapse:collapse;
+    background:#1f2937;
 }
 
-.section {
-  display: none;
+th,td{
+    padding:12px;
+    border-bottom:1px solid #333;
 }
 
-.active {
-  display: block;
+th{
+    color:#ff9800;
 }
 
-.cards {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
+button{
+    padding:8px;
+    border:0;
+    border-radius:6px;
+    cursor:pointer;
 }
 
-.card {
-  background: #1f2937;
-  padding: 15px;
-  border-radius: 10px;
+.delete{
+    background:red;
+    color:white;
 }
 
-table {
-  width: 100%;
-  margin-top: 10px;
-  border-collapse: collapse;
-  background: #1f2937;
+.green{
+    background:green;
+    color:white;
 }
 
-th, td {
-  padding: 10px;
-  border-bottom: 1px solid #333;
+.orange{
+    background:#ff9800;
 }
 
-th {
-  background: #111827;
-  color: #ff9800;
-}
-
-.btn {
-  padding: 5px 8px;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-.approve { background: green; color: white; }
-.reject { background: red; color: white; }
-.edit { background: orange; color: black; }
-.delete { background: #444; color: white; }
-
-input {
-  padding: 8px;
-  margin: 5px;
-  border-radius: 6px;
-  border: none;
+input{
+    padding:10px;
+    margin:5px;
+    border-radius:5px;
+    border:0;
 }
 </style>
+
 </head>
 
 <body>
 
-<div class="sidebar">
-  <h2>💰 Sun Admin</h2>
-  <a onclick="show('dashboard')">Dashboard</a>
-  <a onclick="show('users')">Users</a>
-  <a onclick="show('offers')">Offers</a>
-  <a onclick="show('withdrawals')">Withdrawals</a>
+<header>
+<h1>💰 Sun Money Admin</h1>
+</header>
+
+
+<div class="container">
+
+
+<h2>Dashboard</h2>
+
+<div class="cards">
+
+<div class="card">
+Users
+<h2 id="users">0</h2>
 </div>
 
-<div class="main">
-
-<!-- DASHBOARD -->
-<div id="dashboard" class="section active">
-  <h1>Dashboard</h1>
-
-  <div class="cards">
-    <div class="card">Users: <span id="d_users">0</span></div>
-    <div class="card">Clicks: <span id="d_clicks">0</span></div>
-    <div class="card">Balance: $<span id="d_balance">0</span></div>
-  </div>
+<div class="card">
+Clicks
+<h2 id="clicks">0</h2>
 </div>
 
-<!-- USERS -->
-<div id="users" class="section">
-  <h2>Users</h2>
-  <input placeholder="Search user..." oninput="searchUser(this.value)">
 
-  <table id="usersTable">
-    <tr>
-      <th>ID</th><th>Username</th><th>Email</th><th>Balance</th><th>Actions</th>
-    </tr>
-  </table>
+<div class="card">
+Balance
+<h2 id="balance">$0</h2>
 </div>
 
-<!-- OFFERS -->
-<div id="offers" class="section">
-  <h2>Offers</h2>
-
-  <input id="title" placeholder="Title">
-  <input id="url" placeholder="URL">
-  <input id="reward" placeholder="Reward">
-  <button class="btn approve" onclick="createOffer()">Create</button>
-
-  <table id="offersTable">
-    <tr>
-      <th>ID</th><th>Title</th><th>Reward</th><th>Status</th><th>Actions</th>
-    </tr>
-  </table>
-</div>
-
-<!-- WITHDRAWALS -->
-<div id="withdrawals" class="section">
-  <h2>Withdrawals</h2>
-
-  <table id="withdrawTable">
-    <tr>
-      <th>ID</th><th>Email</th><th>Amount</th><th>Status</th><th>Action</th>
-    </tr>
-  </table>
-</div>
 
 </div>
+
+
+
+<h2>Users</h2>
+
+<table id="usersTable">
+
+<tr>
+<th>ID</th>
+<th>Username</th>
+<th>Email</th>
+<th>Balance</th>
+<th>Action</th>
+</tr>
+
+</table>
+
+
+
+<h2>Offers</h2>
+
+
+<input id="title" placeholder="Title">
+
+<input id="url" placeholder="Offer URL">
+
+<input id="reward" placeholder="Reward">
+
+
+<button class="orange" onclick="addOffer()">
+Add Offer
+</button>
+
+
+
+<table id="offersTable">
+
+<tr>
+<th>ID</th>
+<th>Title</th>
+<th>Reward</th>
+<th>Status</th>
+<th>Action</th>
+</tr>
+
+</table>
+
+
+</div>
+
+
 
 <script>
-const API = "https://sun-money.onrender.com";
-const token = localStorage.getItem("adminToken");
 
-function show(page) {
-  document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
-  document.getElementById(page).classList.add("active");
+
+const API="https://sun-money.onrender.com";
+
+const token=localStorage.getItem("adminToken");
+
+
+
+async function request(url,options={}){
+
+options.headers={
+"Authorization":"Bearer "+token,
+"Content-Type":"application/json",
+...(options.headers||{})
+};
+
+
+let r=await fetch(API+url,options);
+
+return await r.json();
+
 }
 
-/* ================= DASHBOARD ================= */
-async function loadDashboard(){
-  const res = await fetch(API+"/admin/dashboard", {
-    headers: { Authorization: "Bearer " + token }
-  });
-  const d = await res.json();
 
-  document.getElementById("d_users").innerText = d.users;
-  document.getElementById("d_clicks").innerText = d.clicks;
-  document.getElementById("d_balance").innerText = d.totalBalance;
+
+
+
+async function loadStats(){
+
+let d=await request("/admin/stats");
+
+
+console.log(d);
+
+
+users.innerText=d.users || 0;
+clicks.innerText=d.clicks || 0;
+balance.innerText="$"+(d.balance || 0);
+
 }
 
-/* ================= USERS ================= */
+
+
+
 async function loadUsers(){
-  const res = await fetch(API+"/admin/users", {
-    headers: { Authorization: "Bearer " + token }
-  });
 
-  const data = await res.json();
+let data=await request("/admin/users");
 
-  const table = document.getElementById("usersTable");
 
-  table.innerHTML = `
-    <tr>
-      <th>ID</th><th>Username</th><th>Email</th><th>Balance</th><th>Actions</th>
-    </tr>
-  `;
+console.log(data);
 
-  data.forEach(u=>{
-    table.innerHTML += `
-      <tr>
-        <td>${u.id}</td>
-        <td>${u.username}</td>
-        <td>${u.email}</td>
-        <td>$${u.balance}</td>
-        <td>
-          <button class="btn edit" onclick="editBalance(${u.id})">Edit</button>
-          <button class="btn delete" onclick="deleteUser(${u.id})">Delete</button>
-        </td>
-      </tr>
-    `;
-  });
+
+let t=document.getElementById("usersTable");
+
+
+t.innerHTML=`
+
+<tr>
+<th>ID</th>
+<th>Username</th>
+<th>Email</th>
+<th>Balance</th>
+<th>Action</th>
+</tr>
+
+`;
+
+
+
+data.forEach(u=>{
+
+
+t.innerHTML+=`
+
+<tr>
+
+<td>${u.id}</td>
+
+<td>${u.username}</td>
+
+<td>${u.email}</td>
+
+<td>$${u.balance}</td>
+
+
+<td>
+
+<button class="delete"
+onclick="deleteUser(${u.id})">
+
+Delete
+
+</button>
+
+
+</td>
+
+</tr>
+
+`;
+
+});
+
+
 }
 
-async function searchUser(val){
-  const rows = document.querySelectorAll("#usersTable tr");
-  rows.forEach((r,i)=>{
-    if(i===0) return;
-    r.style.display = r.innerText.toLowerCase().includes(val.toLowerCase())
-      ? ""
-      : "none";
-  });
-}
 
-async function editBalance(id){
-  const b = prompt("New balance:");
-  await fetch(API+"/admin/user/balance",{
-    method:"POST",
-    headers:{
-      "Content-Type":"application/json",
-      Authorization:"Bearer "+token
-    },
-    body:JSON.stringify({id, balance:b})
-  });
-  loadUsers();
-}
+
 
 async function deleteUser(id){
-  await fetch(API+"/admin/users/"+id,{
-    method:"DELETE",
-    headers:{Authorization:"Bearer "+token}
-  });
-  loadUsers();
+
+await request("/admin/users/"+id,{
+method:"DELETE"
+});
+
+
+loadUsers();
+
 }
 
-/* ================= OFFERS ================= */
+
+
+
 async function loadOffers(){
-  const res = await fetch(API+"/admin/offers", {
-    headers:{Authorization:"Bearer "+token}
-  });
 
-  const data = await res.json();
 
-  const table = document.getElementById("offersTable");
+let data=await request("/admin/offers");
 
-  table.innerHTML = `
-    <tr>
-      <th>ID</th><th>Title</th><th>Reward</th><th>Status</th><th>Actions</th>
-    </tr>
-  `;
 
-  data.forEach(o=>{
-    table.innerHTML += `
-      <tr>
-        <td>${o.id}</td>
-        <td>${o.title}</td>
-        <td>$${o.reward}</td>
-        <td>${o.active ? "Active":"Off"}</td>
-        <td>
-          <button class="btn approve" onclick="toggleOffer(${o.id}, true)">On</button>
-          <button class="btn reject" onclick="toggleOffer(${o.id}, false)">Off</button>
-          <button class="btn delete" onclick="deleteOffer(${o.id})">Delete</button>
-        </td>
-      </tr>
-    `;
-  });
+let t=document.getElementById("offersTable");
+
+
+t.innerHTML=`
+
+<tr>
+<th>ID</th>
+<th>Title</th>
+<th>Reward</th>
+<th>Status</th>
+<th>Action</th>
+</tr>
+
+`;
+
+
+data.forEach(o=>{
+
+
+t.innerHTML+=`
+
+<tr>
+
+<td>${o.id}</td>
+
+<td>${o.title}</td>
+
+<td>$${o.reward}</td>
+
+<td>${o.active?"Active":"Off"}</td>
+
+
+<td>
+
+
+<button class="green"
+onclick="toggle(${o.id})">
+Toggle
+</button>
+
+
+</td>
+
+
+</tr>
+
+`;
+
+});
+
+
 }
 
-async function createOffer(){
-  await fetch(API+"/admin/offers",{
-    method:"POST",
-    headers:{
-      "Content-Type":"application/json",
-      Authorization:"Bearer "+token
-    },
-    body:JSON.stringify({
-      title: title.value,
-      url: url.value,
-      reward: reward.value
-    })
-  });
 
-  loadOffers();
+
+
+
+async function addOffer(){
+
+
+await request("/admin/offers",{
+
+method:"POST",
+
+body:JSON.stringify({
+
+title:title.value,
+
+url:url.value,
+
+reward:reward.value
+
+})
+
+});
+
+
+loadOffers();
+
 }
 
-async function toggleOffer(id, enable){
-  await fetch(API+"/admin/offers/"+id+"/"+(enable?"enable":"disable"),{
-    method:"POST",
-    headers:{Authorization:"Bearer "+token}
-  });
 
-  loadOffers();
+
+
+async function toggle(id){
+
+
+await request("/admin/offers/"+id+"/toggle",{
+
+method:"POST"
+
+});
+
+
+loadOffers();
+
 }
 
-async function deleteOffer(id){
-  await fetch(API+"/admin/offers/"+id,{
-    method:"DELETE",
-    headers:{Authorization:"Bearer "+token}
-  });
 
-  loadOffers();
-}
 
-/* ================= WITHDRAWALS ================= */
-async function loadWithdrawals(){
-  const res = await fetch(API+"/admin/withdrawals",{
-    headers:{Authorization:"Bearer "+token}
-  });
 
-  const data = await res.json();
-
-  const table = document.getElementById("withdrawTable");
-
-  table.innerHTML = `
-    <tr>
-      <th>ID</th><th>Email</th><th>Amount</th><th>Status</th><th>Action</th>
-    </tr>
-  `;
-
-  data.forEach(w=>{
-    table.innerHTML += `
-      <tr>
-        <td>${w.id}</td>
-        <td>${w.email}</td>
-        <td>$${w.amount}</td>
-        <td>${w.status}</td>
-        <td>
-          <button class="btn approve" onclick="approveW(${w.id})">Approve</button>
-          <button class="btn reject" onclick="rejectW(${w.id})">Reject</button>
-        </td>
-      </tr>
-    `;
-  });
-}
-
-async function approveW(id){
-  await fetch(API+"/admin/withdraw/approve",{
-    method:"POST",
-    headers:{
-      "Content-Type":"application/json",
-      Authorization:"Bearer "+token
-    },
-    body:JSON.stringify({id})
-  });
-  loadWithdrawals();
-}
-
-async function rejectW(id){
-  await fetch(API+"/admin/withdraw/reject",{
-    method:"POST",
-    headers:{
-      "Content-Type":"application/json",
-      Authorization:"Bearer "+token
-    },
-    body:JSON.stringify({id})
-  });
-  loadWithdrawals();
-}
-
-/* ================= INIT ================= */
-loadDashboard();
+loadStats();
 loadUsers();
 loadOffers();
-loadWithdrawals();
+
+
 </script>
+
 
 </body>
 </html>
