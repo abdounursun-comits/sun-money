@@ -2,75 +2,57 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Offers - Sun Money</title>
+<title>Sun Money Offers</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
 body{
-  margin:0;
-  font-family:Arial,sans-serif;
-  background:#0f172a;
-  color:white;
+    margin:0;
+    font-family:Arial;
+    background:#0f172a;
+    color:white;
 }
 
 .header{
-  background:#111827;
-  padding:25px;
-  text-align:center;
+    background:#111827;
+    padding:20px;
+    text-align:center;
 }
 
 .header h1{
-  margin:0;
-  color:#ff9800;
-}
-
-.header p{
-  color:#aaa;
+    color:#ff9800;
 }
 
 .container{
-  padding:20px;
+    padding:20px;
 }
 
 .offer{
-  background:#1f2937;
-  padding:20px;
-  margin-bottom:15px;
-  border-radius:12px;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  box-shadow:0 5px 15px rgba(0,0,0,0.3);
-}
-
-.offer h3{
-  margin:0 0 10px;
+    background:#1f2937;
+    padding:20px;
+    margin-bottom:15px;
+    border-radius:12px;
 }
 
 .reward{
-  color:#00ff88;
-  font-size:18px;
-  font-weight:bold;
+    color:#00ff88;
+    font-size:18px;
+    margin:10px 0;
 }
 
-.btn{
-  background:#ff9800;
-  color:black;
-  border:none;
-  padding:12px 20px;
-  border-radius:8px;
-  cursor:pointer;
-  font-weight:bold;
+button{
+    background:#ff9800;
+    border:0;
+    padding:12px 20px;
+    border-radius:8px;
+    cursor:pointer;
+    font-weight:bold;
 }
 
-.btn:hover{
-  background:#ffb74d;
-}
-
-.message{
-  text-align:center;
-  margin-top:40px;
-  color:#aaa;
+.error{
+    background:#991b1b;
+    padding:15px;
+    border-radius:10px;
 }
 </style>
 
@@ -85,88 +67,95 @@ body{
 
 
 <div class="container" id="offers">
-<div class="message">
 Loading offers...
-</div>
 </div>
 
 
 <script>
 
-const API = "https://sun-money.onrender.com";
+const API="https://sun-money.onrender.com";
 
 
 async function loadOffers(){
 
-    const box = document.getElementById("offers");
+try{
 
-    try{
-
-        const response = await fetch(API + "/api/offers");
+const response = await fetch(API+"/api/offers");
 
 
-        if(!response.ok){
-            throw new Error("Server error");
-        }
+console.log("STATUS:",response.status);
 
 
-        const offers = await response.json();
+const data = await response.json();
 
 
-        box.innerHTML="";
-
-
-        if(offers.length === 0){
-
-            box.innerHTML = `
-            <div class="message">
-            No offers available right now.
-            </div>
-            `;
-
-            return;
-        }
+console.log(data);
 
 
 
-        offers.forEach(o=>{
+const box=document.getElementById("offers");
 
-            box.innerHTML += `
-
-            <div class="offer">
-
-                <div>
-                    <h3>${o.title}</h3>
-
-                    <div class="reward">
-                    Earn $${o.reward}
-                    </div>
-                </div>
+box.innerHTML="";
 
 
-                <button class="btn" onclick="startOffer(${o.id})">
-                    Start
-                </button>
+if(data.length===0){
 
-            </div>
+box.innerHTML=
+`
+<div class="error">
+No offers available now.
+</div>
+`;
 
-            `;
+return;
 
-        });
+}
 
 
-    }
-    catch(error){
 
-        box.innerHTML = `
-        <div class="message">
-        Failed to load offers.
-        </div>
-        `;
+data.forEach(o=>{
 
-        console.log(error);
 
-    }
+box.innerHTML+=
+`
+
+<div class="offer">
+
+<h2>${o.title}</h2>
+
+<div class="reward">
+$${o.reward} Reward
+</div>
+
+
+<button onclick="startOffer(${o.id})">
+Start Offer
+</button>
+
+
+</div>
+
+
+`;
+
+});
+
+
+}
+catch(error){
+
+console.log(error);
+
+
+document.getElementById("offers").innerHTML=
+`
+<div class="error">
+Failed to load offers.<br>
+${error}
+</div>
+`;
+
+}
 
 }
 
@@ -174,22 +163,21 @@ async function loadOffers(){
 
 function startOffer(id){
 
-    let user = localStorage.getItem("user");
+let user=JSON.parse(localStorage.getItem("user"));
 
-    let email="";
-
-
-    if(user){
-
-        user = JSON.parse(user);
-        email=user.email;
-
-    }
+let email="";
 
 
-    window.location.href =
-    API + "/click/" + id +
-    "?email=" + encodeURIComponent(email);
+if(user){
+
+email=user.email;
+
+}
+
+
+window.location.href=
+API+"/click/"+id+"?email="+email;
+
 
 }
 
@@ -199,6 +187,7 @@ loadOffers();
 
 
 </script>
+
 
 </body>
 </html>
