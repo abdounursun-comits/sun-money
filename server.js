@@ -1911,7 +1911,25 @@ app.get("/admin/withdrawals", adminAuth, async(req,res)=>{
 
   }
 });
+app.get("/admin/users", adminAuth, async (req,res)=>{
+  try{
 
+    const result = await pool.query(
+      "SELECT id, username, email, balance, created_at FROM users ORDER BY id DESC"
+    );
+
+    res.json(result.rows);
+
+  }catch(error){
+
+    console.error(error);
+
+    res.status(500).json({
+      error:"Failed to get users"
+    });
+
+  }
+});
 
 // ================= CLEAR CLICKS =================
 
