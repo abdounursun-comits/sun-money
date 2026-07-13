@@ -1847,9 +1847,70 @@ app.get("/admin/withdrawals", adminAuth, async (req, res) => {
 
   res.json(result.rows);
 });
+app.get("/admin/users", adminAuth, async (req,res)=>{
+  try{
+
+    const result = await pool.query(
+      "SELECT id,username,email,balance,created_at FROM users ORDER BY id DESC"
+    );
+
+    res.json(result.rows);
+
+  }catch(error){
+
+    console.error(error);
+    res.status(500).json({error:"Failed to load users"});
+
+  }
+});
+app.get("/admin/stats", adminAuth, async (req,res)=>{
+  try{
+
+    const users = await pool.query(
+      "SELECT COUNT(*) FROM users"
+    );
+
+    const clicks = await pool.query(
+      "SELECT COUNT(*) FROM clicks"
+    );
+
+    const balance = await pool.query(
+      "SELECT COALESCE(SUM(balance),0) FROM users"
+    );
 
 
+    res.json({
 
+      users: users.rows[0].count,
+      clicks: clicks.rows[0].count,
+      balance: balance.rows[0].coalesce
+
+    });
+
+
+  }catch(error){
+
+    console.error(error);
+    res.status(500).json({error:"Stats error"});
+
+  }
+});
+app.get("/admin/withdrawals", adminAuth, async(req,res)=>{
+  try{
+
+    const result = await pool.query(
+      "SELECT * FROM withdrawals ORDER BY id DESC"
+    );
+
+    res.json(result.rows);
+
+  }catch(error){
+
+    console.error(error);
+    res.status(500).json({error:"Failed to load withdrawals"});
+
+  }
+});
 
 
 // ================= CLEAR CLICKS =================
