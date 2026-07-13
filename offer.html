@@ -8,7 +8,7 @@
 <style>
 body{
     margin:0;
-    font-family:Arial;
+    font-family:Arial, sans-serif;
     background:#0f172a;
     color:white;
 }
@@ -21,6 +21,7 @@ body{
 
 .header h1{
     color:#ff9800;
+    margin:0;
 }
 
 .container{
@@ -34,24 +35,39 @@ body{
     border-radius:12px;
 }
 
+.offer h2{
+    margin:0 0 10px;
+}
+
 .reward{
     color:#00ff88;
     font-size:18px;
-    margin:10px 0;
+    margin-bottom:15px;
 }
 
 button{
     background:#ff9800;
-    border:0;
+    border:none;
     padding:12px 20px;
     border-radius:8px;
     cursor:pointer;
     font-weight:bold;
 }
 
+button:hover{
+    background:#ffa726;
+}
+
+.message{
+    background:#1f2937;
+    padding:20px;
+    border-radius:10px;
+    text-align:center;
+}
+
 .error{
     background:#991b1b;
-    padding:15px;
+    padding:20px;
     border-radius:10px;
 }
 </style>
@@ -61,101 +77,113 @@ button{
 <body>
 
 <div class="header">
-<h1>🎯 Sun Money Offers</h1>
-<p>Complete offers and earn rewards</p>
+    <h1>🎯 Sun Money Offers</h1>
+    <p>Complete offers and earn rewards</p>
 </div>
 
 
 <div class="container" id="offers">
-Loading offers...
+    <div class="message">
+        Loading offers...
+    </div>
 </div>
 
 
 <script>
 
-const API="https://sun-money.onrender.com";
+const API = "https://sun-money.onrender.com";
 
 
 async function loadOffers(){
 
-try{
-
-const response = await fetch(API+"/api/offers");
+    const box = document.getElementById("offers");
 
 
-console.log("STATUS:",response.status);
+    try{
+
+        const response = await fetch(API + "/api/offers");
 
 
-const data = await response.json();
+        const data = await response.json();
 
 
-console.log(data);
-
-
-
-const box=document.getElementById("offers");
-
-box.innerHTML="";
-
-
-if(data.length===0){
-
-box.innerHTML=
-`
-<div class="error">
-No offers available now.
-</div>
-`;
-
-return;
-
-}
+        console.log("API RESPONSE:", data);
 
 
 
-data.forEach(o=>{
+        if(!Array.isArray(data)){
+
+            throw new Error(
+                data.error || "Server did not return offers"
+            );
+
+        }
 
 
-box.innerHTML+=
-`
 
-<div class="offer">
+        if(data.length === 0){
 
-<h2>${o.title}</h2>
+            box.innerHTML = `
+            <div class="message">
+                No offers available now.
+            </div>
+            `;
 
-<div class="reward">
-$${o.reward} Reward
-</div>
+            return;
 
-
-<button onclick="startOffer(${o.id})">
-Start Offer
-</button>
+        }
 
 
-</div>
+
+        box.innerHTML = "";
 
 
-`;
 
-});
-
-
-}
-catch(error){
-
-console.log(error);
+        data.forEach(offer=>{
 
 
-document.getElementById("offers").innerHTML=
-`
-<div class="error">
-Failed to load offers.<br>
-${error}
-</div>
-`;
+            box.innerHTML += `
 
-}
+            <div class="offer">
+
+                <h2>${offer.title}</h2>
+
+                <div class="reward">
+                    $${offer.reward} Reward
+                </div>
+
+
+                <button onclick="startOffer(${offer.id})">
+                    Start Offer
+                </button>
+
+            </div>
+
+            `;
+
+
+        });
+
+
+    }
+    catch(error){
+
+        console.error(error);
+
+
+        box.innerHTML = `
+
+        <div class="error">
+
+            Failed to load offers.<br><br>
+
+            ${error.message}
+
+        </div>
+
+        `;
+
+    }
 
 }
 
@@ -163,20 +191,27 @@ ${error}
 
 function startOffer(id){
 
-let user=JSON.parse(localStorage.getItem("user"));
 
-let email="";
-
-
-if(user){
-
-email=user.email;
-
-}
+    let user = localStorage.getItem("user");
 
 
-window.location.href=
-API+"/click/"+id+"?email="+email;
+    let email = "";
+
+
+    if(user){
+
+        try{
+
+            email = JSON.parse(user).email || "";
+
+        }
+        catch(e){}
+
+    }
+
+
+    window.location.href =
+    API + "/click/" + id + "?email=" + encodeURIComponent(email);
 
 
 }

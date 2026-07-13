@@ -440,32 +440,24 @@ error:"Invalid admin login"
 });
 // ================= USER OFFERS =================
 
-app.get("/api/offers", async (req,res)=>{
+app.get("/api/offers", async (req, res) => {
+  try {
 
-try{
+    const result = await pool.query(
+      "SELECT id,title,url,reward FROM offers WHERE active=true ORDER BY id DESC"
+    );
 
-const result = await pool.query(
-`
-SELECT id,title,url,reward
-FROM offers
-WHERE active=true
-ORDER BY id DESC
-`
-);
+    res.json(result.rows);
 
-res.json(result.rows);
+  } catch(error) {
 
+    console.error("OFFERS ERROR:", error);
 
-}catch(err){
+    res.status(500).json({
+      error:"Failed to load offers"
+    });
 
-console.log(err);
-
-res.status(500).json({
-error:"Cannot load offers"
-});
-
-}
-
+  }
 });
 
 
