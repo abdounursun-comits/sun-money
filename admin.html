@@ -1,115 +1,697 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
+
 <head>
-<title>Sun Money Admin</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Sun Money Admin Dashboard</title>
+
+<!-- Font Awesome -->
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+<!-- Chart JS -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 
 <style>
-body{
+
+/* ==========================
+   GLOBAL STYLE
+========================== */
+
+*{
     margin:0;
-    font-family:Arial;
-    background:#0f172a;
-    color:white;
+    padding:0;
+    box-sizing:border-box;
+    font-family:Inter,Arial,sans-serif;
 }
 
-header{
+
+:root{
+
+    --bg:#0f172a;
+    --card:#1f2937;
+    --orange:#ff9800;
+    --green:#22c55e;
+    --red:#ef4444;
+    --text:#f8fafc;
+    --gray:#94a3b8;
+
+}
+
+
+body{
+
+    background:var(--bg);
+    color:var(--text);
+    min-height:100vh;
+
+}
+
+
+
+/* ==========================
+ SIDEBAR
+========================== */
+
+
+.sidebar{
+
+    position:fixed;
+    top:0;
+    left:0;
+
+    width:260px;
+    height:100vh;
+
     background:#111827;
-    padding:20px;
-    text-align:center;
-    color:#ff9800;
+
+    padding:25px 15px;
+
+    transition:.4s;
+
+    z-index:1000;
+
 }
 
-.container{
-    padding:20px;
+
+
+.logo{
+
+    color:var(--orange);
+
+    font-size:22px;
+
+    font-weight:800;
+
+    padding:15px;
+
+    margin-bottom:30px;
+
 }
+
+
+
+.logo i{
+
+    margin-right:10px;
+
+}
+
+
+
+
+.menu a{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:15px;
+
+    padding:14px 18px;
+
+    margin-bottom:8px;
+
+    text-decoration:none;
+
+    color:#cbd5e1;
+
+    border-radius:12px;
+
+    transition:.3s;
+
+}
+
+
+
+.menu a:hover,
+.menu a.active{
+
+    background:var(--orange);
+
+    color:white;
+
+    transform:translateX(5px);
+
+}
+
+
+
+.menu i{
+
+    width:20px;
+
+}
+
+
+
+
+/* ==========================
+ MAIN AREA
+========================== */
+
+
+.main{
+
+    margin-left:260px;
+
+    padding:30px;
+
+    transition:.4s;
+
+}
+
+
+
+.header{
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:space-between;
+
+    margin-bottom:30px;
+
+}
+
+
+
+.header h1{
+
+    font-size:28px;
+
+}
+
+
+
+.profile{
+
+    background:var(--card);
+
+    padding:12px 20px;
+
+    border-radius:12px;
+
+}
+
+
+
+.menu-toggle{
+
+    display:none;
+
+    cursor:pointer;
+
+    font-size:25px;
+
+}
+
+
+
+
+
+/* ==========================
+ DASHBOARD CARDS
+========================== */
+
 
 .cards{
-    display:grid;
-    grid-template-columns:repeat(3,1fr);
-    gap:15px;
+
+display:grid;
+
+grid-template-columns:
+repeat(auto-fit,minmax(220px,1fr));
+
+gap:20px;
+
 }
+
+
 
 .card{
-    background:#1f2937;
-    padding:20px;
-    border-radius:10px;
+
+background:var(--card);
+
+padding:25px;
+
+border-radius:18px;
+
+box-shadow:0 10px 30px rgba(0,0,0,.25);
+
 }
+
+
+
+.card i{
+
+float:right;
+
+font-size:32px;
+
+color:var(--orange);
+
+}
+
+
+
+.card h3{
+
+color:var(--gray);
+
+font-size:15px;
+
+}
+
+
+
+.card p{
+
+font-size:32px;
+
+font-weight:bold;
+
+margin-top:15px;
+
+}
+
+
+
+
+
+/* ==========================
+ SECTIONS
+========================== */
+
+
+.section{
+
+background:var(--card);
+
+border-radius:18px;
+
+padding:25px;
+
+margin-top:30px;
+
+}
+
+
+
+.section-title{
+
+display:flex;
+
+justify-content:space-between;
+
+align-items:center;
+
+margin-bottom:20px;
+
+}
+
+
+
+.section-title h2{
+
+font-size:22px;
+
+}
+
+
+
+
+
+/* ==========================
+ BUTTONS
+========================== */
+
+
+.btn{
+
+padding:10px 18px;
+
+border:none;
+
+border-radius:10px;
+
+cursor:pointer;
+
+font-weight:bold;
+
+}
+
+
+
+.btn-primary{
+
+background:var(--orange);
+
+color:white;
+
+}
+
+
+.btn-success{
+
+background:var(--green);
+
+color:white;
+
+}
+
+
+.btn-danger{
+
+background:var(--red);
+
+color:white;
+
+}
+
+
+
+
+
+/* ==========================
+ TABLE
+========================== */
+
+
+.table-box{
+
+overflow-x:auto;
+
+}
+
+
 
 table{
-    width:100%;
-    margin-top:20px;
-    border-collapse:collapse;
-    background:#1f2937;
+
+width:100%;
+
+border-collapse:collapse;
+
 }
+
+
+
+thead{
+
+background:#111827;
+
+}
+
+
 
 th,td{
-    padding:12px;
-    border-bottom:1px solid #333;
+
+padding:14px;
+
+text-align:left;
+
 }
 
-th{
-    color:#ff9800;
+
+
+tbody tr{
+
+border-bottom:1px solid #374151;
+
+transition:.3s;
+
 }
 
-button{
-    padding:8px;
-    border:0;
-    border-radius:6px;
-    cursor:pointer;
+
+
+tbody tr:hover{
+
+background:#273449;
+
 }
 
-.delete{
-    background:red;
-    color:white;
+
+
+
+
+/* ==========================
+ MOBILE
+========================== */
+
+
+@media(max-width:900px){
+
+
+.sidebar{
+
+left:-270px;
+
 }
 
-.green{
-    background:green;
-    color:white;
+
+.sidebar.show{
+
+left:0;
+
 }
 
-.orange{
-    background:#ff9800;
+
+
+.main{
+
+margin-left:0;
+
+padding:20px;
+
 }
 
-input{
-    padding:10px;
-    margin:5px;
-    border-radius:5px;
-    border:0;
+
+
+.menu-toggle{
+
+display:block;
+
 }
+
+
+
+.header h1{
+
+font-size:22px;
+
+}
+
+
+}
+
+
+
 </style>
 
 </head>
 
+
 <body>
 
-<header>
-<h1>💰 Sun Money Admin</h1>
-</header>
+
+<!-- SIDEBAR -->
+
+<div class="sidebar" id="sidebar">
 
 
-<div class="container">
+<div class="logo">
+
+<i class="fa-solid fa-coins"></i>
+
+Sun Money Admin
+
+</div>
 
 
-<h2>Dashboard</h2>
+
+<div class="menu">
+
+
+<a class="active">
+
+<i class="fa-solid fa-chart-line"></i>
+
+Dashboard
+
+</a>
+
+
+<a>
+
+<i class="fa-solid fa-users"></i>
+
+Users
+
+</a>
+
+
+<a>
+
+<i class="fa-solid fa-gift"></i>
+
+Offers
+
+</a>
+
+
+<a>
+
+<i class="fa-solid fa-money-bill-transfer"></i>
+
+Withdrawals
+
+</a>
+
+
+<a>
+
+<i class="fa-solid fa-mouse-pointer"></i>
+
+Clicks
+
+</a>
+
+
+<a>
+
+<i class="fa-solid fa-bell"></i>
+
+Notifications
+
+</a>
+
+
+<a>
+
+<i class="fa-solid fa-gear"></i>
+
+Settings
+
+</a>
+
+
+<a onclick="logout()">
+
+<i class="fa-solid fa-right-from-bracket"></i>
+
+Logout
+
+</a>
+
+
+</div>
+
+
+</div>
+
+
+
+<!-- MAIN -->
+
+
+<div class="main">
+
+
+<div class="header">
+
+
+<div class="menu-toggle" onclick="toggleSidebar()">
+
+<i class="fa-solid fa-bars"></i>
+
+</div>
+
+
+<h1>
+Sun Money Dashboard
+</h1>
+
+
+<div class="profile">
+
+<i class="fa-solid fa-user-shield"></i>
+
+Admin
+
+</div>
+
+
+</div>
+
+
+<!-- PART 2 START -->
+
+
+<!-- DASHBOARD STATISTICS CARDS -->
 
 <div class="cards">
 
-<div class="card">
-Users
-<h2 id="users">0</h2>
-</div>
 
 <div class="card">
-Clicks
-<h2 id="clicks">0</h2>
+
+<i class="fa-solid fa-users"></i>
+
+<h3>Total Users</h3>
+
+<p id="totalUsers">0</p>
+
 </div>
+
 
 
 <div class="card">
-Balance
-<h2 id="balance">$0</h2>
+
+<i class="fa-solid fa-mouse-pointer"></i>
+
+<h3>Total Clicks</h3>
+
+<p id="totalClicks">0</p>
+
+</div>
+
+
+
+<div class="card">
+
+<i class="fa-solid fa-dollar-sign"></i>
+
+<h3>Total Balance</h3>
+
+<p id="totalBalance">$0</p>
+
+</div>
+
+
+
+<div class="card">
+
+<i class="fa-solid fa-gift"></i>
+
+<h3>Total Offers</h3>
+
+<p id="totalOffers">0</p>
+
+</div>
+
+
+
+<div class="card">
+
+<i class="fa-solid fa-wallet"></i>
+
+<h3>Withdrawals</h3>
+
+<p id="totalWithdrawals">0</p>
+
 </div>
 
 
@@ -117,76 +699,1046 @@ Balance
 
 
 
-<h2>Users</h2>
 
-<table id="usersTable">
+
+<!-- CHARTS SECTION -->
+
+
+<div class="section">
+
+
+<div class="section-title">
+
+<h2>
+Analytics
+</h2>
+
+</div>
+
+
+
+<div style="
+display:grid;
+grid-template-columns:
+repeat(auto-fit,minmax(300px,1fr));
+gap:20px;
+">
+
+
+<div class="card">
+
+<h3>
+Users Growth
+</h3>
+
+<canvas id="usersChart"></canvas>
+
+</div>
+
+
+
+<div class="card">
+
+<h3>
+Clicks Growth
+</h3>
+
+<canvas id="clicksChart"></canvas>
+
+</div>
+
+
+
+<div class="card">
+
+<h3>
+Earnings
+</h3>
+
+<canvas id="earningsChart"></canvas>
+
+</div>
+
+
+</div>
+
+
+</div>
+
+
+
+
+
+
+
+<!-- USERS MANAGEMENT -->
+
+
+<div class="section" id="users">
+
+
+<div class="section-title">
+
+
+<h2>
+
+Users Management
+
+</h2>
+
+
+
+<input 
+type="text"
+id="userSearch"
+placeholder="Search users..."
+style="
+background:#111827;
+border:none;
+padding:12px;
+border-radius:10px;
+color:white;
+">
+
+
+</div>
+
+
+
+
+<div class="table-box">
+
+
+<table>
+
+
+<thead>
 
 <tr>
+
 <th>ID</th>
+
 <th>Username</th>
+
 <th>Email</th>
+
 <th>Balance</th>
-<th>Action</th>
+
+<th>Date</th>
+
+<th>Actions</th>
+
+
 </tr>
+
+
+</thead>
+
+
+
+<tbody id="usersTable">
+
+
+</tbody>
+
+
+</table>
+
+
+</div>
+
+
+</div>
+
+
+
+
+
+
+
+
+<!-- OFFERS MANAGEMENT -->
+
+
+<div class="section" id="offers">
+
+
+<div class="section-title">
+
+
+<h2>
+
+Offers Management
+
+</h2>
+
+
+<button class="btn btn-primary"
+onclick="openOfferModal()">
+
+<i class="fa-solid fa-plus"></i>
+
+Add Offer
+
+</button>
+
+
+</div>
+
+
+
+
+<div class="table-box">
+
+
+<table>
+
+
+<thead>
+
+
+<tr>
+
+
+<th>ID</th>
+
+<th>Title</th>
+
+<th>URL</th>
+
+<th>Reward</th>
+
+<th>Status</th>
+
+<th>Actions</th>
+
+
+</tr>
+
+
+</thead>
+
+
+
+<tbody id="offersTable">
+
+
+</tbody>
+
+
 
 </table>
 
 
 
-<h2>Offers</h2>
+</div>
 
 
-<input id="title" placeholder="Title">
-
-<input id="url" placeholder="Offer URL">
-
-<input id="reward" placeholder="Reward">
+</div>
 
 
-<button class="orange" onclick="addOffer()">
-Add Offer
+
+
+
+
+
+
+
+<!-- WITHDRAWALS MANAGEMENT -->
+
+
+<div class="section" id="withdrawals">
+
+
+<div class="section-title">
+
+<h2>
+
+Withdrawal Requests
+
+</h2>
+
+
+</div>
+
+
+
+<div class="table-box">
+
+
+<table>
+
+
+<thead>
+
+<tr>
+
+
+<th>ID</th>
+
+<th>Email</th>
+
+<th>Method</th>
+
+<th>Account</th>
+
+<th>Amount</th>
+
+<th>Status</th>
+
+<th>Actions</th>
+
+
+</tr>
+
+
+</thead>
+
+
+
+<tbody id="withdrawalsTable">
+
+
+</tbody>
+
+
+</table>
+
+
+</div>
+
+
+</div>
+
+
+
+
+
+
+
+
+
+
+<!-- CLICK TRACKING -->
+
+
+<div class="section" id="clicks">
+
+
+<div class="section-title">
+
+
+<h2>
+
+Click Tracking
+
+</h2>
+
+
+</div>
+
+
+
+<div class="cards">
+
+
+<div class="card">
+
+<h3>
+Total Clicks
+</h3>
+
+<p id="clickTotal">
+0
+</p>
+
+
+</div>
+
+
+
+<div class="card">
+
+<h3>
+Conversions
+</h3>
+
+<p id="conversionTotal">
+0
+</p>
+
+
+</div>
+
+
+
+<div class="card">
+
+<h3>
+Conversion Rate
+</h3>
+
+<p id="conversionRate">
+0%
+</p>
+
+
+</div>
+
+
+</div>
+
+
+
+
+
+<div class="table-box">
+
+
+<table>
+
+
+<thead>
+
+
+<tr>
+
+<th>Click ID</th>
+
+<th>Offer</th>
+
+<th>Email</th>
+
+<th>IP</th>
+
+<th>Converted</th>
+
+<th>Payout</th>
+
+<th>Date</th>
+
+
+</tr>
+
+
+</thead>
+
+
+<tbody id="clicksTable">
+
+
+</tbody>
+
+
+</table>
+
+
+</div>
+
+
+</div>
+
+
+
+
+
+
+
+
+
+<!-- OFFER STATISTICS -->
+
+
+<div class="section">
+
+
+<div class="section-title">
+
+<h2>
+
+Offer Statistics
+
+</h2>
+
+
+</div>
+
+
+
+<div id="offerStats">
+
+
+<div class="cards">
+
+
+<div class="card">
+
+<h3>Clicks</h3>
+
+<p id="offerClicks">
+0
+</p>
+
+</div>
+
+
+<div class="card">
+
+<h3>Conversions</h3>
+
+<p id="offerConversions">
+0
+</p>
+
+</div>
+
+
+<div class="card">
+
+<h3>Revenue</h3>
+
+<p id="offerRevenue">
+$0
+</p>
+
+</div>
+
+
+
+<div class="card">
+
+<h3>Conversion Rate</h3>
+
+<p id="offerRate">
+0%
+</p>
+
+</div>
+
+
+</div>
+
+
+</div>
+
+
+</div>
+
+
+
+
+
+
+
+
+
+<!-- NOTIFICATIONS -->
+
+
+<div class="section" id="notifications">
+
+
+<div class="section-title">
+
+<h2>
+
+Send Notification
+
+</h2>
+
+
+</div>
+
+
+
+<input 
+id="notificationUser"
+placeholder="User ID"
+style="
+width:100%;
+padding:12px;
+background:#111827;
+border:none;
+border-radius:10px;
+color:white;
+margin-bottom:15px;
+">
+
+
+
+<textarea
+id="notificationMessage"
+placeholder="Message"
+style="
+width:100%;
+height:120px;
+padding:12px;
+background:#111827;
+border:none;
+border-radius:10px;
+color:white;
+margin-bottom:15px;
+"></textarea>
+
+
+
+<button class="btn btn-primary">
+
+<i class="fa-solid fa-paper-plane"></i>
+
+Send Notification
+
 </button>
 
 
 
-<table id="offersTable">
+</div>
 
-<tr>
-<th>ID</th>
-<th>Title</th>
-<th>Reward</th>
-<th>Status</th>
-<th>Action</th>
-</tr>
 
-</table>
+
+
+
+
+<!-- SETTINGS -->
+
+
+<div class="section" id="settings">
+
+
+<div class="section-title">
+
+<h2>
+
+Settings
+
+</h2>
 
 
 </div>
+
+
+
+<p>
+Sun Money Admin Panel
+</p>
+
+
+<p style="color:#94a3b8;margin-top:10px;">
+
+Secure fintech management system
+
+</p>
+
+
+</div>
+
+
+
+<!-- PART 3 START -->
+
+
+<!-- LOADING OVERLAY -->
+
+<div id="loading" style="
+display:none;
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:rgba(0,0,0,.7);
+z-index:5000;
+align-items:center;
+justify-content:center;
+">
+
+<div style="
+background:#1f2937;
+padding:30px;
+border-radius:15px;
+text-align:center;
+">
+
+<i class="fa-solid fa-spinner fa-spin"
+style="
+font-size:40px;
+color:#ff9800;
+"></i>
+
+<h3 style="margin-top:15px;">
+Loading...
+</h3>
+
+
+</div>
+
+</div>
+
+
+
+
+
+
+
+<!-- TOAST -->
+
+<div id="toast" style="
+display:none;
+position:fixed;
+right:20px;
+bottom:20px;
+background:#22c55e;
+padding:15px 25px;
+border-radius:12px;
+z-index:6000;
+font-weight:bold;
+">
+
+Success
+
+</div>
+
+
+
+
+
+
+
+
+<!-- USER DETAILS MODAL -->
+
+<div class="modal" id="userModal">
+
+
+<div class="modal-content"
+style="
+background:#1f2937;
+padding:30px;
+border-radius:20px;
+width:450px;
+max-width:90%;
+">
+
+
+<h2>
+User Details
+</h2>
+
+
+<div id="userDetails"
+style="margin-top:20px;">
+</div>
+
+
+<button class="btn btn-danger"
+onclick="closeModal('userModal')">
+
+Close
+
+</button>
+
+
+</div>
+
+
+</div>
+
+
+
+
+
+
+
+
+
+<!-- EDIT BALANCE MODAL -->
+
+<div class="modal" id="balanceModal">
+
+
+<div class="modal-content"
+style="
+background:#1f2937;
+padding:30px;
+border-radius:20px;
+width:400px;
+">
+
+
+<h2>
+Edit Balance
+</h2>
+
+
+
+<input 
+id="balanceUserId"
+type="hidden">
+
+
+
+<input
+id="newBalance"
+placeholder="New balance"
+style="
+width:100%;
+padding:12px;
+margin:15px 0;
+background:#111827;
+border:none;
+border-radius:10px;
+color:white;
+">
+
+
+
+<button class="btn btn-success"
+onclick="updateBalance()">
+
+Save
+
+</button>
+
+
+<button class="btn btn-danger"
+onclick="closeModal('balanceModal')">
+
+Cancel
+
+</button>
+
+
+
+</div>
+
+</div>
+
+
+
+
+
+
+
+
+<!-- OFFER MODAL -->
+
+<div class="modal" id="offerModal">
+
+
+<div class="modal-content"
+style="
+background:#1f2937;
+padding:30px;
+border-radius:20px;
+width:450px;
+">
+
+
+<h2>
+Create Offer
+</h2>
+
+
+
+<input id="offerTitle"
+placeholder="Offer title"
+style="
+width:100%;
+padding:12px;
+margin:10px 0;
+background:#111827;
+border:none;
+border-radius:10px;
+color:white;
+">
+
+
+
+<input id="offerUrl"
+placeholder="Offer URL"
+style="
+width:100%;
+padding:12px;
+margin:10px 0;
+background:#111827;
+border:none;
+border-radius:10px;
+color:white;
+">
+
+
+
+<input id="offerReward"
+placeholder="Reward"
+type="number"
+style="
+width:100%;
+padding:12px;
+margin:10px 0;
+background:#111827;
+border:none;
+border-radius:10px;
+color:white;
+">
+
+
+
+<button class="btn btn-primary"
+onclick="createOffer()">
+
+Create
+
+</button>
+
+
+
+<button class="btn btn-danger"
+onclick="closeModal('offerModal')">
+
+Close
+
+</button>
+
+
+</div>
+
+
+</div>
+
+
+
+
+
+
+
 
 
 
 <script>
 
 
-const API="https://sun-money.onrender.com";
+/*
+================================
+ SUN MONEY ADMIN JAVASCRIPT CORE
+================================
+*/
 
-const token=localStorage.getItem("adminToken");
+
+const API =
+"https://sun-money.onrender.com";
 
 
 
-async function request(url,options={}){
 
-options.headers={
-"Authorization":"Bearer "+token,
+
+// ================================
+// AUTHENTICATION CHECK
+// ================================
+
+
+const adminToken =
+localStorage.getItem("adminToken");
+
+
+
+if(!adminToken){
+
+window.location.href="admin-login.html";
+
+}
+
+
+
+
+
+
+
+// ================================
+// API REQUEST FUNCTION
+// ================================
+
+
+async function api(url,options={}){
+
+
+showLoading();
+
+
+try{
+
+
+let response =
+await fetch(API+url,{
+
+...options,
+
+headers:{
+
 "Content-Type":"application/json",
-...(options.headers||{})
-};
+
+"Authorization":
+"Bearer "+localStorage.getItem("adminToken"),
+
+...(options.headers || {})
+
+}
+
+});
 
 
-let r=await fetch(API+url,options);
 
-return await r.json();
+
+
+if(response.status===401 ||
+response.status===403){
+
+
+localStorage.removeItem("adminToken");
+
+window.location.href="admin-login.html";
+
+return;
+
+
+}
+
+
+
+
+let data =
+await response.json();
+
+
+
+return data;
+
+
+
+}
+
+catch(error){
+
+
+showToast(
+"Server connection error",
+true
+);
+
+
+console.log(error);
+
+
+}
+
+
+finally{
+
+
+hideLoading();
+
+
+}
+
 
 }
 
@@ -194,81 +1746,668 @@ return await r.json();
 
 
 
-async function loadStats(){
-
-let d=await request("/admin/stats");
 
 
-console.log(d);
+
+// ================================
+// LOGOUT
+// ================================
 
 
-users.innerText=d.users || 0;
-clicks.innerText=d.clicks || 0;
-balance.innerText="$"+(d.balance || 0);
+function logout(){
+
+
+localStorage.removeItem("adminToken");
+
+
+window.location.href="admin-login.html";
+
 
 }
 
+
+
+
+
+
+
+// ================================
+// SIDEBAR
+// ================================
+
+
+function toggleSidebar(){
+
+
+document
+.getElementById("sidebar")
+.classList.toggle("show");
+
+
+}
+
+
+
+
+
+
+
+// ================================
+// LOADING
+// ================================
+
+
+function showLoading(){
+
+document.getElementById("loading")
+.style.display="flex";
+
+}
+
+
+function hideLoading(){
+
+document.getElementById("loading")
+.style.display="none";
+
+}
+
+
+
+
+
+
+
+// ================================
+// TOAST
+// ================================
+
+
+function showToast(message,error=false){
+
+
+let toast =
+document.getElementById("toast");
+
+
+toast.innerHTML=message;
+
+
+toast.style.background =
+error ?
+"#ef4444":
+"#22c55e";
+
+
+toast.style.display="block";
+
+
+
+setTimeout(()=>{
+
+
+toast.style.display="none";
+
+
+},3000);
+
+
+
+}
+
+
+
+
+
+
+
+
+// ================================
+// MODAL FUNCTIONS
+// ================================
+
+
+function closeModal(id){
+
+
+document.getElementById(id)
+.style.display="none";
+
+
+}
+
+
+
+function openOfferModal(){
+
+
+document.getElementById("offerModal")
+.style.display="flex";
+
+
+}
+
+
+
+
+
+
+
+
+
+
+// ================================
+// DASHBOARD DATA
+// ================================
+
+
+async function loadDashboard(){
+
+
+let data =
+await api("/admin/dashboard");
+
+
+
+if(!data)
+return;
+
+
+
+document.getElementById("totalUsers")
+.innerHTML=data.users || 0;
+
+
+
+document.getElementById("totalClicks")
+.innerHTML=data.clicks || 0;
+
+
+
+document.getElementById("totalBalance")
+.innerHTML="$"+(data.totalBalance || 0);
+
+
+
+document.getElementById("totalOffers")
+.innerHTML=data.offers || 0;
+
+
+
+document.getElementById("totalWithdrawals")
+.innerHTML=data.withdrawals || 0;
+
+
+
+createCharts();
+
+
+
+}
+
+
+
+
+
+
+
+
+
+
+// ================================
+// CHARTS
+// ================================
+
+
+function createCharts(){
+
+
+
+new Chart(
+document.getElementById("usersChart"),
+
+{
+
+type:"line",
+
+data:{
+
+
+labels:[
+"Jan",
+"Feb",
+"Mar",
+"Apr",
+"May"
+],
+
+
+datasets:[{
+
+label:"Users",
+
+data:[
+10,
+30,
+50,
+80,
+100
+],
+
+
+borderColor:"#ff9800",
+
+tension:.4
+
+
+}]
+
+
+}
+
+
+});
+
+
+
+
+
+
+
+new Chart(
+document.getElementById("clicksChart"),
+
+{
+
+
+type:"bar",
+
+data:{
+
+
+labels:[
+"Jan",
+"Feb",
+"Mar",
+"Apr",
+"May"
+],
+
+
+datasets:[{
+
+label:"Clicks",
+
+data:[
+100,
+400,
+900,
+2000,
+5000
+],
+
+
+backgroundColor:"#22c55e"
+
+
+}]
+
+
+}
+
+
+
+});
+
+
+
+
+
+
+new Chart(
+document.getElementById("earningsChart"),
+
+{
+
+
+type:"doughnut",
+
+
+data:{
+
+
+labels:[
+
+"CPA",
+
+"Bonus"
+
+],
+
+
+datasets:[{
+
+data:[
+80,
+20
+],
+
+
+backgroundColor:[
+
+"#ff9800",
+
+"#22c55e"
+
+]
+
+
+}]
+
+
+}
+
+
+});
+
+
+
+
+}
+
+
+
+
+
+
+
+loadDashboard();
+
+
+
+</script>
+
+
+<!-- PART 4 START -->
+
+
+<script>
+
+
+// =================================
+// USERS MANAGEMENT
+// =================================
 
 
 
 async function loadUsers(){
 
-let data=await request("/admin/users");
+
+let users =
+await api("/admin/users");
 
 
-console.log(data);
+
+let table =
+document.getElementById("usersTable");
 
 
-let t=document.getElementById("usersTable");
+table.innerHTML="";
 
 
-t.innerHTML=`
 
+if(!users || users.length===0){
+
+table.innerHTML=
+`
 <tr>
-<th>ID</th>
-<th>Username</th>
-<th>Email</th>
-<th>Balance</th>
-<th>Action</th>
+<td colspan="6">
+No users found
+</td>
 </tr>
-
 `;
 
+return;
+
+}
 
 
-data.forEach(u=>{
 
 
-t.innerHTML+=`
+users.forEach(user=>{
+
+
+table.innerHTML +=
+
+`
 
 <tr>
 
-<td>${u.id}</td>
 
-<td>${u.username}</td>
+<td>${user.id}</td>
 
-<td>${u.email}</td>
 
-<td>$${u.balance}</td>
+<td>${user.username || "-"}</td>
+
+
+<td>${user.email}</td>
+
+
+<td>
+$${user.balance || 0}
+</td>
+
+
+<td>
+${new Date(user.created_at)
+.toLocaleDateString()}
+</td>
+
 
 
 <td>
 
-<button class="delete"
-onclick="deleteUser(${u.id})">
 
-Delete
+<button class="btn btn-primary"
+onclick="viewUser(${user.id})">
+
+<i class="fa-solid fa-eye"></i>
+
+</button>
+
+
+
+<button class="btn btn-success"
+onclick="openBalance(${user.id},
+${user.balance})">
+
+<i class="fa-solid fa-dollar-sign"></i>
+
+</button>
+
+
+
+<button class="btn btn-danger"
+onclick="deleteUser(${user.id})">
+
+<i class="fa-solid fa-trash"></i>
+
+</button>
+
+
+
+</td>
+
+
+</tr>
+
+
+`;
+
+
+});
+
+
+}
+
+
+
+
+
+
+
+
+// SEARCH USERS
+
+
+document
+.getElementById("userSearch")
+.addEventListener("keyup",async function(){
+
+
+
+let q=this.value;
+
+
+
+if(q.length<1){
+
+loadUsers();
+
+return;
+
+}
+
+
+
+let users =
+await api(
+"/admin/users/search?q="+q
+);
+
+
+
+let table =
+document.getElementById("usersTable");
+
+
+table.innerHTML="";
+
+
+
+users.forEach(user=>{
+
+
+table.innerHTML +=
+
+`
+
+<tr>
+
+<td>${user.id}</td>
+
+<td>${user.username}</td>
+
+<td>${user.email}</td>
+
+<td>$${user.balance}</td>
+
+<td>
+${user.created_at}
+</td>
+
+
+<td>
+
+
+<button class="btn btn-primary"
+onclick="viewUser(${user.id})">
+
+View
 
 </button>
 
 
 </td>
 
+
 </tr>
 
 `;
 
+
 });
+
+
+
+});
+
+
+
+
+
+
+
+
+
+// VIEW USER
+
+
+async function viewUser(id){
+
+
+let user =
+await api(
+"/admin/user/"+id
+);
+
+
+
+document
+.getElementById("userDetails")
+.innerHTML =
+
+`
+
+<p>
+<b>Username:</b>
+${user.username}
+</p>
+
+
+<p>
+<b>Email:</b>
+${user.email}
+</p>
+
+
+<p>
+<b>Balance:</b>
+$${user.balance}
+</p>
+
+
+
+<p>
+<b>Referral Code:</b>
+${user.referral_code || "-"}
+</p>
+
+
+
+<p>
+<b>Created:</b>
+${user.created_at}
+</p>
+
+
+`;
+
+
+
+document
+.getElementById("userModal")
+.style.display="flex";
 
 
 }
@@ -276,75 +2415,286 @@ Delete
 
 
 
-async function deleteUser(id){
 
-await request("/admin/users/"+id,{
-method:"DELETE"
+
+
+
+
+// OPEN BALANCE
+
+
+function openBalance(id,balance){
+
+
+document
+.getElementById("balanceUserId")
+.value=id;
+
+
+document
+.getElementById("newBalance")
+.value=balance;
+
+
+
+document
+.getElementById("balanceModal")
+.style.display="flex";
+
+
+}
+
+
+
+
+
+
+
+
+// UPDATE BALANCE
+
+
+async function updateBalance(){
+
+
+let id =
+document.getElementById("balanceUserId")
+.value;
+
+
+let balance =
+document.getElementById("newBalance")
+.value;
+
+
+
+await api(
+"/admin/user/balance",
+{
+
+
+method:"POST",
+
+
+body:JSON.stringify({
+
+id,
+balance
+
+})
+
+
 });
+
+
+
+showToast(
+"Balance updated"
+);
+
+
+
+closeModal(
+"balanceModal"
+);
+
 
 
 loadUsers();
 
+
 }
 
+
+
+
+
+
+
+
+
+// DELETE USER
+
+
+async function deleteUser(id){
+
+
+
+let confirmDelete =
+confirm(
+"Are you sure you want to delete this user?"
+);
+
+
+
+if(!confirmDelete)
+return;
+
+
+
+await api(
+"/admin/users/"+id,
+{
+
+method:"DELETE"
+
+}
+
+);
+
+
+
+showToast(
+"User deleted"
+);
+
+
+
+loadUsers();
+
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+// =================================
+// OFFERS MANAGEMENT
+// =================================
 
 
 
 async function loadOffers(){
 
 
-let data=await request("/admin/offers");
+let offers =
+await api("/admin/offers");
 
 
-let t=document.getElementById("offersTable");
+
+let area =
+document.getElementById("offersTable");
 
 
-t.innerHTML=`
 
-<tr>
-<th>ID</th>
-<th>Title</th>
-<th>Reward</th>
-<th>Status</th>
-<th>Action</th>
-</tr>
-
-`;
+area.innerHTML="";
 
 
-data.forEach(o=>{
+
+offers.forEach(offer=>{
 
 
-t.innerHTML+=`
+area.innerHTML +=
+
+`
 
 <tr>
 
-<td>${o.id}</td>
 
-<td>${o.title}</td>
+<td>${offer.id}</td>
 
-<td>$${o.reward}</td>
 
-<td>${o.active?"Active":"Off"}</td>
+<td>${offer.title}</td>
+
+
+<td>
+
+<a href="${offer.url}"
+target="_blank">
+
+Open
+
+</a>
+
+</td>
+
+
+
+<td>
+$${offer.reward}
+</td>
+
 
 
 <td>
 
 
-<button class="green"
-onclick="toggle(${o.id})">
-Toggle
-</button>
+${offer.active ?
+
+'<span style="color:#22c55e">Active</span>':
+
+'<span style="color:#ef4444">Disabled</span>'}
 
 
 </td>
 
 
+
+<td>
+
+
+
+${offer.active ?
+
+
+`
+
+<button class="btn btn-danger"
+onclick="disableOffer(${offer.id})">
+
+Disable
+
+</button>
+
+`
+
+:
+
+`
+
+<button class="btn btn-success"
+onclick="enableOffer(${offer.id})">
+
+Enable
+
+</button>
+
+`}
+
+
+
+
+<button class="btn btn-danger"
+onclick="deleteOffer(${offer.id})">
+
+Delete
+
+</button>
+
+
+
+</td>
+
+
+
 </tr>
+
 
 `;
 
+
+
 });
+
 
 
 }
@@ -353,57 +2703,933 @@ Toggle
 
 
 
-async function addOffer(){
 
 
-await request("/admin/offers",{
+
+
+// CREATE OFFER
+
+
+async function createOffer(){
+
+
+
+let title =
+document.getElementById("offerTitle")
+.value;
+
+
+let url =
+document.getElementById("offerUrl")
+.value;
+
+
+let reward =
+document.getElementById("offerReward")
+.value;
+
+
+
+
+
+await api(
+"/admin/offers",
+{
 
 method:"POST",
 
+
 body:JSON.stringify({
 
-title:title.value,
-
-url:url.value,
-
-reward:reward.value
+title,
+url,
+reward
 
 })
 
+
 });
 
 
+
+showToast(
+"Offer created"
+);
+
+
+
+closeModal(
+"offerModal"
+);
+
+
+
 loadOffers();
+
+
 
 }
 
 
 
 
-async function toggle(id){
 
 
-await request("/admin/offers/"+id+"/toggle",{
+
+
+
+// ENABLE OFFER
+
+
+async function enableOffer(id){
+
+
+
+await api(
+"/admin/offers/"+id+"/enable",
+{
 
 method:"POST"
 
-});
+}
+
+);
+
+
+showToast(
+"Offer enabled"
+);
+
 
 
 loadOffers();
+
 
 }
 
 
 
 
-loadStats();
-loadUsers();
+
+
+
+
+
+// DISABLE OFFER
+
+
+async function disableOffer(id){
+
+
+
+await api(
+"/admin/offers/"+id+"/disable",
+{
+
+method:"POST"
+
+}
+
+);
+
+
+showToast(
+"Offer disabled"
+);
+
+
+
 loadOffers();
+
+
+}
+
+
+
+
+
+
+
+
+
+// DELETE OFFER
+
+
+async function deleteOffer(id){
+
+
+
+if(!confirm(
+"Delete this offer?"
+))
+return;
+
+
+
+await api(
+"/admin/offers/"+id,
+{
+
+method:"DELETE"
+
+}
+
+);
+
+
+
+showToast(
+"Offer deleted"
+);
+
+
+
+loadOffers();
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+// INITIAL LOAD
+
+
+loadUsers();
+
+loadOffers();
+
 
 
 </script>
 
 
+<!-- PART 5 START -->
+
+
+<script>
+
+
+
+
+// =================================
+// WITHDRAWALS MANAGEMENT
+// =================================
+
+
+
+async function loadWithdrawals(){
+
+
+let withdrawals =
+await api("/admin/withdrawals");
+
+
+
+let table =
+document.getElementById("withdrawalsTable");
+
+
+
+table.innerHTML="";
+
+
+
+if(!withdrawals || withdrawals.length===0){
+
+
+table.innerHTML=
+
+`
+
+<tr>
+
+<td colspan="7">
+
+No withdrawal requests
+
+</td>
+
+</tr>
+
+`;
+
+return;
+
+
+}
+
+
+
+
+
+withdrawals.forEach(w=>{
+
+
+table.innerHTML +=
+
+`
+
+<tr>
+
+
+<td>
+${w.id}
+</td>
+
+
+
+<td>
+${w.email}
+</td>
+
+
+
+<td>
+${w.method}
+</td>
+
+
+
+<td>
+${w.account}
+</td>
+
+
+
+<td>
+$${w.amount}
+</td>
+
+
+
+<td>
+
+${w.status}
+
+</td>
+
+
+
+<td>
+
+
+
+<button 
+class="btn btn-success"
+
+onclick="approveWithdraw(${w.id})">
+
+<i class="fa-solid fa-check"></i>
+
+Approve
+
+</button>
+
+
+
+
+<button 
+class="btn btn-danger"
+
+onclick="rejectWithdraw(${w.id})">
+
+<i class="fa-solid fa-xmark"></i>
+
+Reject
+
+</button>
+
+
+
+</td>
+
+
+
+</tr>
+
+
+`;
+
+
+
+});
+
+
+}
+
+
+
+
+
+
+
+
+
+// APPROVE WITHDRAWAL
+
+
+async function approveWithdraw(id){
+
+
+
+if(!confirm(
+"Approve this withdrawal?"
+))
+return;
+
+
+
+
+await api(
+"/admin/withdraw/approve",
+{
+
+method:"POST",
+
+body:JSON.stringify({
+
+id
+
+})
+
+
+});
+
+
+
+showToast(
+"Withdrawal approved"
+);
+
+
+
+loadWithdrawals();
+
+
+
+}
+
+
+
+
+
+
+
+
+
+
+// REJECT WITHDRAWAL
+
+
+async function rejectWithdraw(id){
+
+
+
+if(!confirm(
+"Reject this withdrawal?"
+))
+return;
+
+
+
+
+await api(
+"/admin/withdraw/reject",
+{
+
+method:"POST",
+
+body:JSON.stringify({
+
+id
+
+})
+
+
+});
+
+
+
+showToast(
+"Withdrawal rejected"
+);
+
+
+
+loadWithdrawals();
+
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+// =================================
+// CLICK TRACKING
+// =================================
+
+
+
+async function loadClicks(){
+
+
+let clicks =
+await api("/admin/click-stats");
+
+
+
+if(!clicks)
+return;
+
+
+
+document
+.getElementById("clickTotal")
+.innerHTML =
+clicks.total || 0;
+
+
+
+document
+.getElementById("conversionTotal")
+.innerHTML =
+clicks.conversions || 0;
+
+
+
+
+let rate = 0;
+
+
+
+if(clicks.total>0){
+
+rate =
+(clicks.conversions /
+clicks.total)*100;
+
+}
+
+
+
+document
+.getElementById("conversionRate")
+.innerHTML =
+rate.toFixed(2)+"%";
+
+
+
+
+
+
+let table =
+document.getElementById("clicksTable");
+
+
+
+table.innerHTML="";
+
+
+
+
+(clicks.data || []).forEach(c=>{
+
+
+table.innerHTML +=
+
+`
+
+<tr>
+
+
+<td>
+${c.id}
+</td>
+
+
+
+<td>
+${c.offer_id}
+</td>
+
+
+
+<td>
+${c.email}
+</td>
+
+
+
+<td>
+${c.ip}
+</td>
+
+
+
+<td>
+
+
+${c.converted ?
+
+'<span style="color:#22c55e">YES</span>':
+
+'<span style="color:#ef4444">NO</span>'}
+
+
+
+</td>
+
+
+
+<td>
+$${c.payout || 0}
+</td>
+
+
+
+<td>
+${c.created_at}
+</td>
+
+
+
+</tr>
+
+
+`;
+
+
+
+});
+
+
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+// =================================
+// OFFER STATISTICS
+// =================================
+
+
+
+async function loadOfferStats(id){
+
+
+
+let stats =
+await api(
+"/admin/offer-stats/"+id
+);
+
+
+
+if(!stats)
+return;
+
+
+
+
+document
+.getElementById("offerClicks")
+.innerHTML =
+stats.clicks || 0;
+
+
+
+document
+.getElementById("offerConversions")
+.innerHTML =
+stats.conversions || 0;
+
+
+
+document
+.getElementById("offerRevenue")
+.innerHTML =
+"$"+(stats.revenue || 0);
+
+
+
+document
+.getElementById("offerRate")
+.innerHTML =
+(stats.rate || 0)+"%";
+
+
+
+}
+
+
+
+
+
+
+
+
+
+// =================================
+// NOTIFICATIONS
+// =================================
+
+
+
+async function sendNotification(){
+
+
+
+let user_id =
+document
+.getElementById("notificationUser")
+.value;
+
+
+
+let message =
+document
+.getElementById("notificationMessage")
+.value;
+
+
+
+
+
+await api(
+"/admin/notify",
+{
+
+method:"POST",
+
+body:JSON.stringify({
+
+user_id,
+
+message
+
+})
+
+
+});
+
+
+
+
+
+showToast(
+"Notification sent"
+);
+
+
+
+
+document
+.getElementById("notificationMessage")
+.value="";
+
+
+
+}
+
+
+
+
+
+
+
+
+
+// =================================
+// PAGINATION SYSTEM
+// =================================
+
+
+
+let currentPage=1;
+
+let rowsPerPage=10;
+
+
+
+function paginate(data){
+
+
+
+let start =
+(currentPage-1)
+*
+rowsPerPage;
+
+
+
+let end =
+start+rowsPerPage;
+
+
+
+return data.slice(start,end);
+
+
+
+}
+
+
+
+function nextPage(){
+
+
+currentPage++;
+
+
+loadUsers();
+
+
+}
+
+
+
+function previousPage(){
+
+
+
+if(currentPage>1){
+
+currentPage--;
+
+loadUsers();
+
+}
+
+
+}
+
+
+
+
+
+
+
+
+
+
+// =================================
+// SECURITY AUTO CHECK
+// =================================
+
+
+
+setInterval(()=>{
+
+
+let token =
+localStorage.getItem(
+"adminToken"
+);
+
+
+
+if(!token){
+
+
+window.location.href=
+"admin-login.html";
+
+
+}
+
+
+
+},60000);
+
+
+
+
+
+
+
+
+
+
+
+// =================================
+// LOAD ALL DATA
+// =================================
+
+
+
+async function loadAll(){
+
+
+await loadDashboard();
+
+
+await loadUsers();
+
+
+await loadOffers();
+
+
+await loadWithdrawals();
+
+
+await loadClicks();
+
+
+
+}
+
+
+
+
+// Run dashboard loading
+
+loadAll();
+
+
+
+
+
+
+
+</script>
+
+
+
+
+
+
+</div>
+
+
+
+
+
 </body>
+
 </html>
+
