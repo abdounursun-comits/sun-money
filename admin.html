@@ -1,76 +1,165 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sun Money Admin</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
-<title>Sun Money Admin Login</title>
+<style>
+body{
+    margin:0;
+    font-family:Arial;
+    background:#0f172a;
+    color:white;
+}
 
-<link rel="stylesheet" href="admin.css">
+header{
+    background:#111827;
+    padding:20px;
+    text-align:center;
+    color:#ff9800;
+}
 
-<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+.container{
+    padding:20px;
+}
+
+.cards{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:15px;
+}
+
+.card{
+    background:#1f2937;
+    padding:20px;
+    border-radius:10px;
+}
+
+table{
+    width:100%;
+    margin-top:20px;
+    border-collapse:collapse;
+    background:#1f2937;
+}
+
+th,td{
+    padding:12px;
+    border-bottom:1px solid #333;
+}
+
+th{
+    color:#ff9800;
+}
+
+button{
+    padding:8px;
+    border:0;
+    border-radius:6px;
+    cursor:pointer;
+}
+
+.delete{
+    background:red;
+    color:white;
+}
+
+.green{
+    background:green;
+    color:white;
+}
+
+.orange{
+    background:#ff9800;
+}
+
+input{
+    padding:10px;
+    margin:5px;
+    border-radius:5px;
+    border:0;
+}
+</style>
 
 </head>
 
-<body class="login-body">
+<body>
+
+<header>
+<h1>💰 Sun Money Admin</h1>
+</header>
 
 
-<div class="login-container">
-
-    <div class="login-card">
-
-        <div class="logo">
-            <i class="fa-solid fa-coins"></i>
-            <h1>Sun Money</h1>
-            <p>Admin Panel</p>
-        </div>
+<div class="container">
 
 
-        <form id="loginForm">
+<h2>Dashboard</h2>
+
+<div class="cards">
+
+<div class="card">
+Users
+<h2 id="users">0</h2>
+</div>
+
+<div class="card">
+Clicks
+<h2 id="clicks">0</h2>
+</div>
 
 
-            <div class="input-box">
-
-                <i class="fa fa-user"></i>
-
-                <input 
-                type="text"
-                id="username"
-                placeholder="Admin Username"
-                required>
-
-            </div>
+<div class="card">
+Balance
+<h2 id="balance">$0</h2>
+</div>
 
 
-
-            <div class="input-box">
-
-                <i class="fa fa-lock"></i>
-
-                <input 
-                type="password"
-                id="password"
-                placeholder="Password"
-                required>
-
-            </div>
+</div>
 
 
 
-            <button type="submit" class="login-btn">
+<h2>Users</h2>
 
-                <span>Login</span>
+<table id="usersTable">
 
-            </button>
+<tr>
+<th>ID</th>
+<th>Username</th>
+<th>Email</th>
+<th>Balance</th>
+<th>Action</th>
+</tr>
+
+</table>
 
 
-            <p id="message"></p>
+
+<h2>Offers</h2>
 
 
-        </form>
+<input id="title" placeholder="Title">
+
+<input id="url" placeholder="Offer URL">
+
+<input id="reward" placeholder="Reward">
 
 
-    </div>
+<button class="orange" onclick="addOffer()">
+Add Offer
+</button>
+
+
+
+<table id="offersTable">
+
+<tr>
+<th>ID</th>
+<th>Title</th>
+<th>Reward</th>
+<th>Status</th>
+<th>Action</th>
+</tr>
+
+</table>
 
 
 </div>
@@ -79,107 +168,238 @@
 
 <script>
 
+
 const API="https://sun-money.onrender.com";
 
-
-document
-.getElementById("loginForm")
-.addEventListener("submit",async(e)=>{
-
-
-e.preventDefault();
-
-
-const username=
-document.getElementById("username").value;
-
-
-const password=
-document.getElementById("password").value;
+const token=localStorage.getItem("adminToken");
 
 
 
-try{
+async function request(url,options={}){
+
+options.headers={
+"Authorization":"Bearer "+token,
+"Content-Type":"application/json",
+...(options.headers||{})
+};
 
 
-let response =
-await fetch(
-API+"/admin/login",
-{
+let r=await fetch(API+url,options);
+
+return await r.json();
+
+}
+
+
+
+
+
+async function loadStats(){
+
+let d=await request("/admin/stats");
+
+
+console.log(d);
+
+
+users.innerText=d.users || 0;
+clicks.innerText=d.clicks || 0;
+balance.innerText="$"+(d.balance || 0);
+
+}
+
+
+
+
+async function loadUsers(){
+
+let data=await request("/admin/users");
+
+
+console.log(data);
+
+
+let t=document.getElementById("usersTable");
+
+
+t.innerHTML=`
+
+<tr>
+<th>ID</th>
+<th>Username</th>
+<th>Email</th>
+<th>Balance</th>
+<th>Action</th>
+</tr>
+
+`;
+
+
+
+data.forEach(u=>{
+
+
+t.innerHTML+=`
+
+<tr>
+
+<td>${u.id}</td>
+
+<td>${u.username}</td>
+
+<td>${u.email}</td>
+
+<td>$${u.balance}</td>
+
+
+<td>
+
+<button class="delete"
+onclick="deleteUser(${u.id})">
+
+Delete
+
+</button>
+
+
+</td>
+
+</tr>
+
+`;
+
+});
+
+
+}
+
+
+
+
+async function deleteUser(id){
+
+await request("/admin/users/"+id,{
+method:"DELETE"
+});
+
+
+loadUsers();
+
+}
+
+
+
+
+async function loadOffers(){
+
+
+let data=await request("/admin/offers");
+
+
+let t=document.getElementById("offersTable");
+
+
+t.innerHTML=`
+
+<tr>
+<th>ID</th>
+<th>Title</th>
+<th>Reward</th>
+<th>Status</th>
+<th>Action</th>
+</tr>
+
+`;
+
+
+data.forEach(o=>{
+
+
+t.innerHTML+=`
+
+<tr>
+
+<td>${o.id}</td>
+
+<td>${o.title}</td>
+
+<td>$${o.reward}</td>
+
+<td>${o.active?"Active":"Off"}</td>
+
+
+<td>
+
+
+<button class="green"
+onclick="toggle(${o.id})">
+Toggle
+</button>
+
+
+</td>
+
+
+</tr>
+
+`;
+
+});
+
+
+}
+
+
+
+
+
+async function addOffer(){
+
+
+await request("/admin/offers",{
 
 method:"POST",
 
-headers:{
-"Content-Type":"application/json"
-},
-
-
 body:JSON.stringify({
 
-username,
-password
+title:title.value,
+
+url:url.value,
+
+reward:reward.value
 
 })
 
+});
+
+
+loadOffers();
+
+}
+
+
+
+
+async function toggle(id){
+
+
+await request("/admin/offers/"+id+"/toggle",{
+
+method:"POST"
 
 });
 
 
-let data =
-await response.json();
-
-
-
-if(data.token){
-
-
-localStorage.setItem(
-"adminToken",
-data.token
-);
-
-
-
-document.getElementById("message")
-.innerHTML=
-"Login successful...";
-
-
-setTimeout(()=>{
-
-window.location.href="admin.html";
-
-},1000);
-
-
-
-}
-else{
-
-
-document.getElementById("message")
-.innerHTML=
-"Invalid login";
-
+loadOffers();
 
 }
 
 
 
-}catch(error){
 
-
-document.getElementById("message")
-.innerHTML=
-"Server connection error";
-
-
-}
-
-
-
-});
-
+loadStats();
+loadUsers();
+loadOffers();
 
 
 </script>
