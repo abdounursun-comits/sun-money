@@ -143,32 +143,25 @@ function auth(req,res,next){
 
 
 
-function adminAuth(req,res,next){
+function adminAuth(req, res, next) {
+    const token = req.headers.authorization?.split(" ")[1];
 
-    const token =
-    req.headers.authorization?.split(" ")[1];
+    console.log("ADMIN TOKEN:", token);
 
-
-    if(!token){
-        return res.status(401).json({
-            error:"No admin token"
-        });
+    if (!token) {
+        return res.status(401).json({ error: "No admin token" });
     }
 
-
-    jwt.verify(token,ADMIN_SECRET,(err)=>{
-
-        if(err){
-            return res.status(403).json({
-                error:"Invalid admin token"
-            });
+    jwt.verify(token, ADMIN_SECRET, (err, decoded) => {
+        if (err) {
+            console.log("JWT ERROR:", err.message);
+            return res.status(403).json({ error: "Invalid admin token" });
         }
 
+        console.log("ADMIN VERIFIED:", decoded);
 
         next();
-
     });
-
 }
 
 
@@ -1824,45 +1817,9 @@ conversions.rows[0].count
 
 });
 
-app.get("/admin/users", adminAuth, async (req, res) => {
-  const result = await pool.query(`
-    SELECT
-      id,
-      username,
-      email,
-      balance,
-      created_at
-    FROM users
-    ORDER BY id DESC
-  `);
 
-  res.json(result.rows);
-});
-app.get("/admin/withdrawals", adminAuth, async (req, res) => {
-  const result = await pool.query(`
-    SELECT *
-    FROM withdrawals
-    ORDER BY created_at DESC
-  `);
 
-  res.json(result.rows);
-});
-app.get("/admin/users", adminAuth, async (req,res)=>{
-  try{
 
-    const result = await pool.query(
-      "SELECT id,username,email,balance,created_at FROM users ORDER BY id DESC"
-    );
-
-    res.json(result.rows);
-
-  }catch(error){
-
-    console.error(error);
-    res.status(500).json({error:"Failed to load users"});
-
-  }
-});
 app.get("/admin/stats", adminAuth, async (req,res)=>{
   try{
 
@@ -1907,7 +1864,10 @@ app.get("/admin/withdrawals", adminAuth, async(req,res)=>{
   }catch(error){
 
     console.error(error);
-    res.status(500).json({error:"Failed to load withdrawals"});
+
+    res.status(500).json({
+      error:"Failed to load withdrawals"
+    });
 
   }
 });
