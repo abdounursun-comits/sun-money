@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Sun Money Admin Login</title>
+
+
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+
+<style>
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:Arial, sans-serif;
+}
+
+
+body{
+
+    min-height:100vh;
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    background:#0f172a;
+
+    color:white;
+
+}
+
+
+
+.login-box{
+
+
+    width:400px;
+
+    max-width:90%;
+
+    background:#1f2937;
+
+    padding:35px;
+
+    border-radius:20px;
+
+    box-shadow:
+    0 20px 50px rgba(0,0,0,.4);
+
+
+}
+
+
+
+.logo{
+
+
+    text-align:center;
+
+    font-size:28px;
+
+    font-weight:bold;
+
+    color:#ff9800;
+
+    margin-bottom:30px;
+
+
+}
+
+
+
+.logo i{
+
+    margin-right:10px;
+
+}
+
+
+
+h2{
+
+    text-align:center;
+
+    margin-bottom:25px;
+
+}
+
+
+
+.input-group{
+
+    margin-bottom:20px;
+
+}
+
+
+
+.input-group label{
+
+    display:block;
+
+    color:#cbd5e1;
+
+    margin-bottom:8px;
+
+}
+
+
+
+.input-group input{
+
+
+    width:100%;
+
+    padding:14px;
+
+    border:none;
+
+    outline:none;
+
+    border-radius:10px;
+
+    background:#111827;
+
+    color:white;
+
+    font-size:16px;
+
+
+}
+
+
+
+button{
+
+
+    width:100%;
+
+    padding:14px;
+
+    border:none;
+
+    border-radius:10px;
+
+    background:#ff9800;
+
+    color:white;
+
+    font-size:17px;
+
+    font-weight:bold;
+
+    cursor:pointer;
+
+    transition:.3s;
+
+
+}
+
+
+
+button:hover{
+
+    transform:translateY(-2px);
+
+    background:#f57c00;
+
+}
+
+
+
+.message{
+
+    text-align:center;
+
+    margin-top:20px;
+
+    color:#ef4444;
+
+}
+
+
+
+.loading{
+
+    display:none;
+
+    text-align:center;
+
+    margin-top:15px;
+
+    color:#22c55e;
+
+}
+
+
+
+.footer{
+
+    margin-top:25px;
+
+    text-align:center;
+
+    color:#94a3b8;
+
+    font-size:13px;
+
+}
+
+
+</style>
+
+</head>
+
+
+<body>
+
+
+
+<div class="login-box">
+
+
+<div class="logo">
+
+<i class="fa-solid fa-coins"></i>
+
+Sun Money Admin
+
+</div>
+
+
+
+<h2>
+Administrator Login
+</h2>
+
+
+
+<div class="input-group">
+
+<label>
+Username
+</label>
+
+<input 
+id="username"
+type="text"
+placeholder="Admin username">
+
+
+</div>
+
+
+
+
+
+<div class="input-group">
+
+<label>
+Password
+</label>
+
+
+<input
+id="password"
+type="password"
+placeholder="Admin password">
+
+
+</div>
+
+
+
+
+<button onclick="login()">
+
+<i class="fa-solid fa-right-to-bracket"></i>
+
+Login
+
+</button>
+
+
+
+
+<div class="loading" id="loading">
+
+<i class="fa-solid fa-spinner fa-spin"></i>
+
+Checking...
+
+</div>
+
+
+
+
+<div class="message" id="message"></div>
+
+
+
+
+<div class="footer">
+
+Sun Money Secure Admin System
+
+</div>
+
+
+</div>
+
+
+
+
+
+
+
+
+<script>
+
+
+const API =
+"https://sun-money.onrender.com";
+
+
+
+
+async function login(){
+
+
+
+const username =
+document.getElementById("username").value;
+
+
+
+const password =
+document.getElementById("password").value;
+
+
+
+const message =
+document.getElementById("message");
+
+
+
+const loading =
+document.getElementById("loading");
+
+
+
+
+if(!username || !password){
+
+message.innerHTML=
+"Enter username and password";
+
+return;
+
+}
+
+
+
+loading.style.display="block";
+
+message.innerHTML="";
+
+
+
+try{
+
+
+const response =
+await fetch(
+API+"/admin/login",
+{
+
+method:"POST",
+
+headers:{
+
+"Content-Type":
+"application/json"
+
+},
+
+
+body:JSON.stringify({
+
+username,
+
+password
+
+})
+
+
+});
+
+
+
+
+const data =
+await response.json();
+
+
+
+
+if(response.ok && data.token){
+
+
+
+localStorage.setItem(
+"adminToken",
+data.token
+);
+
+
+
+message.style.color="#22c55e";
+
+message.innerHTML=
+"Login successful...";
+
+
+
+setTimeout(()=>{
+
+
+window.location.href=
+"admin.html";
+
+
+},1000);
+
+
+
+}
+else{
+
+
+message.style.color="#ef4444";
+
+message.innerHTML =
+data.error ||
+"Login failed";
+
+
+}
+
+
+
+}catch(error){
+
+
+message.innerHTML=
+"Server connection error";
+
+
+}
+
+
+
+loading.style.display="none";
+
+
+}
+
+
+
+
+
+
+// Press Enter to login
+
+document.addEventListener(
+"keypress",
+function(e){
+
+if(e.key==="Enter"){
+
+login();
+
+}
+
+});
+
+
+
+</script>
+
+
+</body>
+
+</html>
