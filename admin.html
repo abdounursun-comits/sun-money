@@ -1281,8 +1281,9 @@ margin-bottom:15px;
 "></textarea>
 
 
-
-<button class="btn btn-primary">
+<button 
+onclick="sendNotification()"
+class="btn btn-primary">
 
 <i class="fa-solid fa-paper-plane"></i>
 
@@ -3572,33 +3573,83 @@ window.location.href=
 
 
 // =================================
-// LOAD ALL DATA
+// SEND NOTIFICATION
 // =================================
 
 
-
-async function loadAll(){
-
-
-await loadDashboard();
+async function sendNotification(){
 
 
-await loadUsers();
+let user_id =
+document.getElementById("notificationUser").value;
 
 
-await loadOffers();
+let message =
+document.getElementById("notificationMessage").value;
 
 
-await loadWithdrawals();
+
+if(!user_id || !message){
 
 
-await loadClicks();
+showToast(
+"Please fill all fields",
+true
+);
 
+
+return;
+
+}
+
+
+
+
+let result =
+await api(
+"/admin/notify",
+{
+
+method:"POST",
+
+body:JSON.stringify({
+
+user_id:user_id,
+
+message:message
+
+})
+
+}
+
+);
+
+
+
+if(result){
+
+
+showToast(
+"Notification sent successfully"
+);
+
+
+
+document.getElementById(
+"notificationUser"
+).value="";
+
+
+
+document.getElementById(
+"notificationMessage"
+).value="";
 
 
 }
 
 
+}
 
 
 // Run dashboard loading
