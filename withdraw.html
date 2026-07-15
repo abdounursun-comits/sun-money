@@ -1,8 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
+
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>Withdraw - Sun Money</title>
 
 <style>
@@ -19,201 +22,291 @@ background:#f4f6f9;
 padding:20px;
 }
 
-.header{
-background:#ff9800;
-color:white;
-padding:20px;
-border-radius:15px;
-margin-bottom:20px;
+.container{
+max-width:1200px;
+margin:auto;
 }
 
-.balance-card{
-background:linear-gradient(135deg,#ff9800,#ffb74d);
+.header{
+background:linear-gradient(135deg,#ff9800,#ff6d00);
 color:white;
 padding:25px;
 border-radius:15px;
 margin-bottom:20px;
 }
 
-.balance-card h1{
-font-size:45px;
-margin-top:10px;
+.header h1{
+font-size:30px;
 }
 
-.pending{
+.balance-card,
+.card,
+.note{
+
 background:white;
-color:#333;
-padding:12px;
+padding:25px;
+border-radius:15px;
+box-shadow:0 5px 15px rgba(0,0,0,.1);
+margin-bottom:20px;
+
+}
+
+.balance-card h2{
+color:#777;
+font-size:18px;
+}
+
+.balance{
+
+font-size:45px;
+color:#28a745;
+margin-top:10px;
+
+}
+
+.pending-box{
+
+background:#fff3cd;
+padding:15px;
 border-radius:10px;
 margin-top:20px;
+
 }
 
 .grid{
+
 display:grid;
 grid-template-columns:1fr 1fr;
 gap:20px;
-}
 
-.card{
-background:white;
-padding:20px;
-border-radius:15px;
-box-shadow:0 3px 10px rgba(0,0,0,.08);
 }
 
 .card h2{
+
+color:#ff9800;
 margin-bottom:20px;
+
 }
+
 
 label{
+
 display:block;
-margin-top:15px;
-margin-bottom:5px;
 font-weight:bold;
+margin-top:15px;
+
 }
 
-input,
-select{
+
+input,select{
+
 width:100%;
 padding:12px;
 border:1px solid #ddd;
 border-radius:10px;
+margin-top:5px;
+
 }
 
-.btn{
+
+button{
+
 width:100%;
 padding:15px;
-background:#ff9800;
-border:none;
-color:white;
-font-size:18px;
-border-radius:10px;
-cursor:pointer;
 margin-top:20px;
+background:#ff9800;
+color:white;
+border:none;
+border-radius:10px;
+font-size:18px;
+cursor:pointer;
+
 }
 
-.btn:hover{
-background:#f57c00;
+
+button:hover{
+
+background:#e68900;
+
 }
+
 
 .history-item{
+
 display:flex;
 justify-content:space-between;
 padding:15px;
 border-bottom:1px solid #eee;
+
+}
+
+
+.pending{
+
+color:#ff9800;
+font-weight:bold;
+
 }
 
 .approved{
+
 color:green;
 font-weight:bold;
-}
 
-.pending-status{
-color:orange;
-font-weight:bold;
 }
 
 .rejected{
+
 color:red;
 font-weight:bold;
+
 }
+
+
+.loading{
+
+text-align:center;
+padding:20px;
+color:#777;
+
+}
+
 
 .note{
-margin-top:20px;
+
 background:#e8f5e9;
-padding:20px;
-border-radius:15px;
+
 }
 
-@media(max-width:900px){
+
+@media(max-width:800px){
 
 .grid{
+
 grid-template-columns:1fr;
+
 }
 
 }
 
 </style>
+
 </head>
+
+
 <body>
 
+
+<div class="container">
+
+
 <div class="header">
+
 <h1>💰 Withdraw Funds</h1>
-<p>Request your earnings anytime.</p>
+
+<p>Request your earnings securely</p>
+
 </div>
+
+
 
 <div class="balance-card">
 
-<h3>Available Balance</h3>
+<h2>Available Balance</h2>
 
-<h1>$<span id="balance">25.40</span></h1>
+<div class="balance">
 
-<div class="pending">
+$<span id="balance">0.00</span>
+
+</div>
+
+
+<div class="pending-box">
+
 Pending Withdrawal:
-<b>$10.00</b>
-</div>
+
+<b id="pending">$0.00</b>
 
 </div>
+
+
+</div>
+
+
+
 
 <div class="grid">
+
+
 
 <div class="card">
 
 <h2>📤 Request Withdrawal</h2>
 
-<label>Method</label>
+
+<label>Payment Method</label>
 
 <select id="method">
+
 <option>Mobile Money</option>
 <option>Bank Transfer</option>
 <option>PayPal</option>
+
 </select>
+
+
 
 <label>Account Number</label>
 
-<input
-type="text"
-id="account"
-placeholder="07xxxxxxxx">
+<input id="account" type="text" placeholder="07xxxxxxxx">
+
+
 
 <label>Amount</label>
 
-<input
-type="number"
-id="amount"
-placeholder="10">
+<input id="amount" type="number" placeholder="Minimum $10">
 
-<button class="btn" onclick="withdraw()">
+
+
+<button onclick="withdraw()">
+
 Request Withdrawal
+
 </button>
 
+
 </div>
+
+
+
+
 
 <div class="card">
 
+
 <h2>📜 Withdrawal History</h2>
 
-<div class="history-item">
-<span>#15</span>
-<span>$20</span>
-<span class="approved">Approved</span>
-</div>
 
-<div class="history-item">
-<span>#14</span>
-<span>$10</span>
-<span class="pending-status">Pending</span>
-</div>
+<div id="history">
 
-<div class="history-item">
-<span>#13</span>
-<span>$5</span>
-<span class="rejected">Rejected</span>
-</div>
+<div class="loading">
+
+Loading...
 
 </div>
 
+
 </div>
+
+
+</div>
+
+
+</div>
+
+
+
+
 
 <div class="note">
 
@@ -222,63 +315,259 @@ Request Withdrawal
 <br>
 
 <p>
-Withdrawals are reviewed manually by admin.
-Processing usually takes 24-48 hours.
+Withdrawals are processed manually by administrator.
+</p>
+
+<br>
+
+<p>
+Minimum withdrawal amount: <b>$10</b>
+</p>
+
+<br>
+
+<p>
+Your balance is locked when you submit a withdrawal.
 </p>
 
 </div>
 
+
+
+</div>
+
+
+
+
+
 <script>
 
-const API =
-"https://sun-money.onrender.com";
+
+const API="https://sun-money.onrender.com";
+
+const token=localStorage.getItem("token");
+
+
+
+if(!token){
+
+window.location.href="auth.html";
+
+}
+
+
+
+
+async function loadWithdrawData(){
+
+
+try{
+
+
+const res=await fetch(API+"/user/dashboard",{
+
+headers:{
+
+Authorization:"Bearer "+token
+
+}
+
+});
+
+
+const data=await res.json();
+
+
+
+document.getElementById("balance").innerText=
+
+Number(data.user.balance || 0).toFixed(2);
+
+
+
+document.getElementById("pending").innerText=
+
+"$"+Number(data.user.pending_withdrawal || 0).toFixed(2);
+
+
+
+const history=document.getElementById("history");
+
+history.innerHTML="";
+
+
+
+if(!data.withdrawals || data.withdrawals.length===0){
+
+
+history.innerHTML=
+
+`
+<div class="loading">
+No withdrawal history yet.
+</div>
+`;
+
+return;
+
+}
+
+
+
+
+data.withdrawals.forEach(w=>{
+
+
+let status="pending";
+
+
+if(w.status==="Approved"){
+
+status="approved";
+
+}
+
+if(w.status==="Rejected"){
+
+status="rejected";
+
+}
+
+
+
+history.innerHTML+=
+
+`
+
+<div class="history-item">
+
+<span>#${w.id}</span>
+
+<span>$${Number(w.amount).toFixed(2)}</span>
+
+<span class="${status}">${w.status}</span>
+
+</div>
+
+`;
+
+});
+
+
+}
+
+catch(error){
+
+console.log(error);
+
+
+document.getElementById("history").innerHTML=
+
+`
+<div class="loading">
+Failed to load history.
+</div>
+`;
+
+}
+
+
+}
+
+
+
+
 
 async function withdraw(){
 
-const token =
-localStorage.getItem("token");
 
-const method =
-document.getElementById("method").value;
+const method=document.getElementById("method").value;
 
-const account =
-document.getElementById("account").value;
+const account=document.getElementById("account").value;
 
-const amount =
-document.getElementById("amount").value;
+const amount=document.getElementById("amount").value;
 
-const res =
-await fetch(API + "/withdraw",{
+
+
+if(!account || !amount){
+
+alert("Fill all fields");
+
+return;
+
+}
+
+
+
+const res=await fetch(API+"/withdraw",{
+
 method:"POST",
+
 headers:{
+
 "Content-Type":"application/json",
+
 Authorization:"Bearer "+token
+
 },
+
 body:JSON.stringify({
+
 method,
 account,
 amount
+
 })
+
+
 });
 
-const data =
-await res.json();
+
+
+const data=await res.json();
+
+
 
 if(data.success){
 
-alert("Withdrawal submitted");
 
-location.reload();
+alert("Withdrawal request sent");
 
-}else{
 
-alert(data.error || "Error");
+document.getElementById("account").value="";
+
+document.getElementById("amount").value="";
+
+
+loadWithdrawData();
+
 
 }
 
+else{
+
+
+alert(data.error || "Withdrawal failed");
+
+
 }
+
+
+}
+
+
+
+
+loadWithdrawData();
+
+
+setInterval(loadWithdrawData,5000);
+
+
 
 </script>
 
+
 </body>
+
 </html>
