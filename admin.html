@@ -2927,145 +2927,140 @@ loadOffers();
 
 async function loadWithdrawals(){
 
+    try{
 
-let withdrawals =
-await api("/admin/withdrawals");
-
-
-
-let table =
-document.getElementById("withdrawalsTable");
+        let withdrawals = await api("/admin/withdrawals");
 
 
-
-table.innerHTML="";
-
-
-
-if(!withdrawals || withdrawals.length===0){
+        let table =
+        document.getElementById("withdrawalsTable");
 
 
-table.innerHTML=
+        table.innerHTML="";
 
-`
 
-<tr>
+        if(!withdrawals || withdrawals.length===0){
 
-<td colspan="7">
+            table.innerHTML=`
 
-No withdrawal requests
+            <tr>
+            <td colspan="7" style="text-align:center">
 
-</td>
+            No withdrawal requests found
 
-</tr>
+            </td>
+            </tr>
 
-`;
+            `;
 
-return;
+            return;
+
+        }
+
+
+
+        withdrawals.forEach(w=>{
+
+
+            table.innerHTML += `
+
+            <tr>
+
+            <td>
+            ${w.id}
+            </td>
+
+
+            <td>
+            ${w.email}
+            </td>
+
+
+            <td>
+            ${w.method}
+            </td>
+
+
+            <td>
+            ${w.account}
+            </td>
+
+
+            <td>
+            $${w.amount}
+            </td>
+
+
+            <td>
+            ${w.status}
+            </td>
+
+
+
+            <td>
+
+
+            ${
+            w.status==="Pending"
+
+            ?
+
+            `
+
+            <button 
+            class="btn btn-success"
+            onclick="approveWithdraw(${w.id})">
+
+            <i class="fa fa-check"></i>
+            Approve
+
+            </button>
+
+
+            <button 
+            class="btn btn-danger"
+            onclick="rejectWithdraw(${w.id})">
+
+            <i class="fa fa-xmark"></i>
+            Reject
+
+            </button>
+
+            `
+
+            :
+
+            w.status
+
+            }
+
+
+            </td>
+
+
+            </tr>
+
+
+            `;
+
+
+        });
+
+
+
+    }catch(error){
+
+        console.log(error);
+
+        showToast(
+        "Failed loading withdrawals",
+        true
+        );
+
+    }
 
 
 }
-
-
-
-
-
-withdrawals.forEach(w=>{
-
-
-table.innerHTML +=
-
-`
-
-<tr>
-
-
-<td>
-${w.id}
-</td>
-
-
-
-<td>
-${w.email}
-</td>
-
-
-
-<td>
-${w.method}
-</td>
-
-
-
-<td>
-${w.account}
-</td>
-
-
-
-<td>
-$${w.amount}
-</td>
-
-
-
-<td>
-
-${w.status}
-
-</td>
-
-
-
-<td>
-
-
-
-<button 
-class="btn btn-success"
-
-onclick="approveWithdraw(${w.id})">
-
-<i class="fa-solid fa-check"></i>
-
-Approve
-
-</button>
-
-
-
-
-<button 
-class="btn btn-danger"
-
-onclick="rejectWithdraw(${w.id})">
-
-<i class="fa-solid fa-xmark"></i>
-
-Reject
-
-</button>
-
-
-
-</td>
-
-
-
-</tr>
-
-
-`;
-
-
-
-});
-
-
-}
-
-
 
 
 
@@ -3608,7 +3603,15 @@ await loadClicks();
 
 // Run dashboard loading
 
-loadAll();
+loadDashboard();
+
+loadUsers();
+
+loadOffers();
+
+loadWithdrawals();
+
+loadClicks();
 
 
 
