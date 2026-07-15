@@ -3,307 +3,620 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>Sun Money Dashboard</title>
 
 <style>
+
 *{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
-    font-family:Arial,sans-serif;
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Arial,Helvetica,sans-serif;
 }
 
 body{
-    background:#f4f6f9;
+background:#eef2f7;
+color:#222;
 }
 
 header{
-    background:#ff9800;
-    color:white;
-    padding:15px;
-    text-align:center;
-    font-size:26px;
-    font-weight:bold;
+background:linear-gradient(90deg,#ff9800,#ff6d00);
+padding:18px;
+color:#fff;
+text-align:center;
+font-size:28px;
+font-weight:bold;
+box-shadow:0 2px 10px rgba(0,0,0,.2);
 }
 
 nav{
-    background:white;
-    padding:15px;
-    display:flex;
-    justify-content:center;
-    gap:20px;
-    box-shadow:0 2px 5px rgba(0,0,0,.1);
+background:#fff;
+display:flex;
+justify-content:center;
+gap:25px;
+padding:15px;
+box-shadow:0 2px 8px rgba(0,0,0,.08);
+position:sticky;
+top:0;
+z-index:999;
 }
 
 nav a{
-    text-decoration:none;
-    color:#333;
-    font-weight:bold;
+text-decoration:none;
+color:#333;
+font-weight:bold;
+transition:.3s;
+}
+
+nav a:hover{
+color:#ff9800;
 }
 
 .container{
-    max-width:1200px;
-    margin:20px auto;
-    padding:15px;
+max-width:1200px;
+margin:auto;
+padding:20px;
+}
+
+.welcome{
+background:#fff;
+border-radius:12px;
+padding:25px;
+box-shadow:0 5px 15px rgba(0,0,0,.08);
+margin-bottom:20px;
+}
+
+.welcome h2{
+margin-bottom:8px;
+}
+
+.cards{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+gap:18px;
+margin-bottom:25px;
 }
 
 .card{
-    background:white;
-    border-radius:12px;
-    padding:20px;
-    margin-bottom:20px;
-    box-shadow:0 0 10px rgba(0,0,0,.08);
+background:#fff;
+border-radius:12px;
+padding:22px;
+box-shadow:0 5px 15px rgba(0,0,0,.08);
+text-align:center;
 }
 
-.balance{
-    text-align:center;
+.card h4{
+color:#666;
+margin-bottom:12px;
 }
 
-.balance h2{
-    color:#28a745;
-    font-size:40px;
-    margin-top:10px;
+.card h2{
+font-size:34px;
+color:#28a745;
 }
 
-.grid{
-    display:grid;
-    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
-    gap:15px;
+.orange{
+color:#ff9800!important;
 }
 
-.stat{
-    background:white;
-    border-radius:10px;
-    padding:20px;
-    text-align:center;
-    box-shadow:0 0 10px rgba(0,0,0,.08);
+.red{
+color:#e53935!important;
 }
 
-.btn{
-    display:inline-block;
-    padding:10px 20px;
-    background:#ff9800;
-    color:white;
-    text-decoration:none;
-    border-radius:6px;
-    margin-right:10px;
-    margin-top:10px;
+.blue{
+color:#1565c0!important;
+}
+
+.green{
+color:#2e7d32!important;
+}
+
+.section{
+background:#fff;
+padding:20px;
+margin-top:20px;
+border-radius:12px;
+box-shadow:0 5px 15px rgba(0,0,0,.08);
+}
+
+.section h3{
+margin-bottom:15px;
+color:#ff9800;
+}
+
+.button{
+display:inline-block;
+padding:12px 20px;
+background:#ff9800;
+color:white;
+text-decoration:none;
+border-radius:8px;
+margin-right:10px;
+margin-top:10px;
+font-weight:bold;
+transition:.3s;
+}
+
+.button:hover{
+background:#e68900;
+}
+
+table{
+width:100%;
+border-collapse:collapse;
+margin-top:15px;
+}
+
+table th{
+background:#ff9800;
+color:#fff;
+padding:12px;
+}
+
+table td{
+padding:12px;
+border-bottom:1px solid #eee;
+text-align:center;
 }
 
 .notification{
-    background:#fff8e1;
-    border-left:4px solid #ff9800;
-    padding:10px;
-    margin-top:10px;
-    border-radius:5px;
-}
-
-.footer{
-    text-align:center;
-    padding:20px;
-    color:#666;
+background:#fff8e1;
+border-left:5px solid #ff9800;
+padding:12px;
+margin-bottom:10px;
+border-radius:8px;
 }
 
 .loading{
-    text-align:center;
-    color:#888;
+text-align:center;
+padding:20px;
+color:#777;
 }
+
+footer{
+text-align:center;
+padding:25px;
+color:#666;
+margin-top:40px;
+}
+
+@media(max-width:700px){
+
+nav{
+flex-wrap:wrap;
+gap:12px;
+}
+
+.card h2{
+font-size:28px;
+}
+
+}
+
 </style>
+
 </head>
 
 <body>
 
 <header>
+
 💰 Sun Money Dashboard
+
 </header>
 
 <nav>
-    <a href="dashboard.html">Dashboard</a>
-    <a href="offer.html">Offers</a>
-    <a href="withdraw.html">Withdraw</a>
-    <a href="#" onclick="logout()">Logout</a>
+
+<a href="dashboard.html">Dashboard</a>
+
+<a href="offers.html">Offers</a>
+
+<a href="withdraw.html">Withdraw</a>
+
+<a href="#" onclick="logout()">Logout</a>
+
 </nav>
 
 <div class="container">
 
-    <div class="card">
-        <h2>Welcome <span id="username">User</span></h2>
-        <p>Complete CPA offers and earn money.</p>
-    </div>
+<div class="welcome">
 
-    <div class="card balance">
-        <h3>Current Balance</h3>
-        <h2>$<span id="balance">0.00</span></h2>
-    </div>
+<h2>
+Welcome,
+<span id="username">Loading...</span>
+</h2>
 
-    <div class="grid">
-
-        <div class="stat">
-            <h3>Total Earnings</h3>
-            <h2>$<span id="earnings">0.00</span></h2>
-        </div>
-
-        <div class="stat">
-            <h3>Reward Per Offer</h3>
-            <h2>$0.20</h2>
-        </div>
-
-        <div class="stat">
-            <h3>Status</h3>
-            <h2>✅ Active</h2>
-        </div>
-
-        <div class="stat">
-            <h3>User ID</h3>
-            <h2 id="userId">0</h2>
-        </div>
-
-    </div>
-
-    <div class="card">
-        <h3>Quick Actions</h3>
-        <br>
-        <a href="offer.html" class="btn">View Offers</a>
-        <a href="withdraw.html" class="btn">Withdraw Money</a>
-    </div>
-
-    <div class="card">
-        <h3>Notifications</h3>
-
-        <div id="notifications" class="loading">
-            Loading notifications...
-        </div>
-    </div>
-
-    <div class="card">
-        <h3>Information</h3>
-
-        <p>✔ Earn $0.20 for every valid CPA conversion.</p>
-        <br>
-
-        <p>✔ Withdraw using Mobile Money or Bank Account.</p>
-        <br>
-
-        <p>✔ Withdrawals are processed manually by admin.</p>
-        <br>
-
-        <p>✔ Complete offers to increase your balance.</p>
-    </div>
+<p>
+Earn money by completing CPA offers.
+Your balance updates automatically after every successful conversion.
+</p>
 
 </div>
 
-<div class="footer">
+<div class="cards">
+
+<div class="card">
+
+<h4>Current Balance</h4>
+
+<h2>
+
+$
+
+<span id="balance">
+
+0.00
+
+</span>
+
+</h2>
+
+</div>
+
+<div class="card">
+
+<h4>Total Clicks</h4>
+
+<h2 class="blue" id="clicks">
+
+0
+
+</h2>
+
+</div>
+
+<div class="card">
+
+<h4>Pending Withdrawal</h4>
+
+<h2 class="orange">
+
+$
+
+<span id="pending">
+
+0.00
+
+</span>
+
+</h2>
+
+</div>
+
+<div class="card">
+
+<h4>User ID</h4>
+
+<h2 class="green" id="userid">
+
+0
+
+</h2>
+
+</div>
+
+</div>
+
+<div class="section">
+
+<h3>
+
+Quick Actions
+
+</h3>
+
+<a href="offers.html" class="button">
+
+View Offers
+
+</a>
+
+<a href="withdraw.html" class="button">
+
+Withdraw
+
+</a>
+<div class="section">
+
+<h3>User Information</h3>
+
+<table>
+
+<tr>
+<th>Username</th>
+<td id="username2">Loading...</td>
+</tr>
+
+<tr>
+<th>Email</th>
+<td id="email">Loading...</td>
+</tr>
+
+<tr>
+<th>Account Status</th>
+<td style="color:green;font-weight:bold;">
+ACTIVE
+</td>
+</tr>
+
+</table>
+
+</div>
+
+<div class="section">
+
+<h3>Withdrawal History</h3>
+
+<table id="withdrawTable">
+
+<tr>
+
+<th>ID</th>
+
+<th>Method</th>
+
+<th>Amount</th>
+
+<th>Status</th>
+
+<th>Date</th>
+
+</tr>
+
+<tr>
+
+<td colspan="5">
+
+Loading...
+
+</td>
+
+</tr>
+
+</table>
+
+</div>
+
+<div class="section">
+
+<h3>Notifications</h3>
+
+<div id="notifications" class="loading">
+
+Loading notifications...
+
+</div>
+
+</div>
+
+<div class="section">
+
+<h3>Information</h3>
+
+<p>✔ Complete CPA offers to earn money.</p>
+<br>
+
+<p>✔ Your balance updates automatically after successful postbacks.</p>
+<br>
+
+<p>✔ Minimum withdrawal is <b>$10</b>.</p>
+<br>
+
+<p>✔ Withdrawals are reviewed manually by the administrator.</p>
+
+</div>
+
+</div>
+
+<footer>
+
 © 2026 Sun Money
-</div>
+
+</footer>
 
 <script>
 
 const API = "https://sun-money.onrender.com";
 
 const token = localStorage.getItem("token");
-const userId = localStorage.getItem("userId");
-const username = localStorage.getItem("username");
 
 if(!token){
-    window.location.href = "auth.html";
+
+location.href="auth.html";
+
 }
 
+async function loadDashboard(){
+
+try{
+
+const res = await fetch(API + "/user/dashboard",{
+
+headers:{
+
+Authorization:"Bearer " + token
+
+}
+
+});
+
+const data = await res.json();
+
 document.getElementById("username").innerText =
-    username || "User";
+data.user.username;
 
-document.getElementById("userId").innerText =
-    userId || "0";
+document.getElementById("username2").innerText =
+data.user.username;
 
-async function loadBalance(){
+document.getElementById("email").innerText =
+data.user.email;
 
-    try{
+document.getElementById("userid").innerText =
+data.user.id;
 
-        const res = await fetch(API + "/balance",{
-            headers:{
-                Authorization:"Bearer " + token
-            }
-        });
+document.getElementById("balance").innerText =
+Number(data.user.balance).toFixed(2);
 
-        const data = await res.json();
+document.getElementById("pending").innerText =
+Number(data.user.pending_withdrawal).toFixed(2);
 
-        document.getElementById("balance").innerText =
-            Number(data.balance || 0).toFixed(2);
+document.getElementById("clicks").innerText =
+data.clicks;
 
-        document.getElementById("earnings").innerText =
-            Number(data.balance || 0).toFixed(2);
+let table = document.getElementById("withdrawTable");
 
-    }catch(err){
+table.innerHTML = `
 
-        console.log(err);
+<tr>
 
-        document.getElementById("balance").innerText = "0.00";
-        document.getElementById("earnings").innerText = "0.00";
-    }
+<th>ID</th>
+
+<th>Method</th>
+
+<th>Amount</th>
+
+<th>Status</th>
+
+<th>Date</th>
+
+</tr>
+
+`;
+
+if(data.withdrawals.length==0){
+
+table.innerHTML += `
+
+<tr>
+
+<td colspan="5">
+
+No withdrawals yet.
+
+</td>
+
+</tr>
+
+`;
+
+}else{
+
+data.withdrawals.forEach(w=>{
+
+table.innerHTML += `
+
+<tr>
+
+<td>${w.id}</td>
+
+<td>${w.method}</td>
+
+<td>$${w.amount}</td>
+
+<td>${w.status}</td>
+
+<td>${new Date(w.created_at).toLocaleDateString()}</td>
+
+</tr>
+
+`;
+
+});
+
+}
+
+}catch(err){
+
+console.log(err);
+
+}
+
 }
 
 async function loadNotifications(){
 
-    if(!userId){
-        document.getElementById("notifications").innerHTML =
-            "No user ID found. Please login again.";
-        return;
-    }
+try{
 
-    try{
+const res = await fetch(API + "/notifications",{
 
-        const res = await fetch(
-            API + "/notifications/" + userId,
-            {
-                headers:{
-                    Authorization:"Bearer " + token
-                }
-            }
-        );
+headers:{
 
-        const data = await res.json();
+Authorization:"Bearer " + token
 
-        let html = "";
-
-        if(!data.length){
-            html = "No notifications yet.";
-        }else{
-
-            data.forEach(item => {
-
-                html += `
-                    <div class="notification">
-                        ${item.message}
-                    </div>
-                `;
-
-            });
-        }
-
-        document.getElementById("notifications").innerHTML = html;
-
-    }catch(err){
-
-        console.log(err);
-
-        document.getElementById("notifications").innerHTML =
-            "Failed to load notifications.";
-    }
 }
 
+});
+
+const data = await res.json();
+
+let html="";
+
+if(data.length==0){
+
+html="<p>No notifications.</p>";
+
+}else{
+
+data.forEach(n=>{
+
+html += `
+<div class="notification">
+
+${n.message}
+
+</div>
+`;
+
+});
+
+}
+
+document.getElementById("notifications").innerHTML = html;
+
+}catch(err){
+
+console.log(err);
+
+}
+
+}
 function logout(){
 
-    localStorage.clear();
+    localStorage.removeItem("token");
+    localStorage.removeItem("username");
+    localStorage.removeItem("userId");
 
-    window.location.href = "auth.html";
+    window.location.href="auth.html";
+
 }
 
-loadBalance();
+
+// Load data when page opens
+
+loadDashboard();
+
 loadNotifications();
 
-setInterval(loadBalance,5000);
-setInterval(loadNotifications,10000);
+
+// Auto refresh balance and notifications
+
+setInterval(()=>{
+
+    loadDashboard();
+
+},5000);
+
+
+setInterval(()=>{
+
+    loadNotifications();
+
+},10000);
+
 
 </script>
 
 </body>
+
 </html>
