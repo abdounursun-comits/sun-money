@@ -897,78 +897,152 @@ res.status(500).send(
 });
 // ================= USER DASHBOARD =================
 
-
 app.get("/user/dashboard", auth, async(req,res)=>{
 
 try{
 
-
-const user =
-await pool.query(
-`
-SELECT 
-id,
-username,
-email,
-balance,
-pending_withdrawal
-FROM users
-WHERE id=$1
-`,
-[
-req.user.id
-]
-);
+    const user = await pool.query(
+    `
+    SELECT 
+        id,
+        username,
+        email,
+        balance,
+        pending_withdrawal
+    FROM users
+    WHERE id=$1
+    `,
+    [
+        req.user.id
+    ]);
 
 
+    if(!user.rows.length){
 
-if(!user.rows.length){
+        return res.status(404).json({
+            error:"User not found"
+        });
 
-return res.status(404).json({
-error:"User not found"
+    }
+
+
+
+    const clicks = await pool.query(
+    `
+    SELECT COUNT(*) 
+    FROM clicks
+    WHERE email=$1
+    `,
+    [
+        req.user.email
+    ]);
+
+
+
+    const withdrawals = await pool.query(
+    `
+    SELECT *
+    FROM withdrawals
+    WHERE email=$1
+    ORDER BY created_at DESC
+    `,
+    [
+        req.user.email
+    ]);
+
+
+
+    // GET USER NOTIFICATIONS
+
+    const notifications = await pool.query(
+    `
+    SELECT 
+        id,
+        message,
+        created_at
+    FROM notifications
+    WHERE user_id=$1
+    ORDER BY created_at DESC
+    `,
+    [
+        req.user.id
+    ]);
+
+
+
+
+    res.json({
+
+        user:user.rows[0],
+
+        clicks:clicks.rows[0].count,
+
+        withdrawals:withdrawals.rows,
+
+        notifications:notifications.rows
+
+    });
+
+
+
+}catch(err){
+
+    console.log(err);
+
+    res.status(500).json({
+        error:"Dashboard error"
+    });
+
+}
+
+});
+
+
+
+
+
+// ================= ADMIN SEND NOTIFICATION =================
+
+
+app.post("/admin/notify", adminAuth, async(req,res)=>{
+
+try{
+
+const {
+user_id,
+message
+}=req.body;
+
+
+
+if(!user_id || !message){
+
+return res.status(400).json({
+error:"User ID and message required"
 });
 
 }
 
 
 
-const clicks =
 await pool.query(
 `
-SELECT COUNT(*)
-FROM clicks
-WHERE email=$1
+INSERT INTO notifications
+(user_id,message)
+VALUES($1,$2)
 `,
 [
-req.user.email
-]
-);
-
-
-
-
-const withdrawals =
-await pool.query(
-`
-SELECT *
-FROM withdrawals
-WHERE email=$1
-ORDER BY created_at DESC
-`,
-[
-req.user.email
-]
-);
+user_id,
+message
+]);
 
 
 
 res.json({
 
-user:user.rows[0],
+success:true,
 
-clicks:clicks.rows[0].count,
-
-withdrawals:withdrawals.rows
+message:"Notification sent"
 
 });
 
@@ -979,13 +1053,68 @@ withdrawals:withdrawals.rows
 console.log(err);
 
 res.status(500).json({
-error:"Dashboard error"
+
+error:"Notification failed"
+
 });
 
 }
 
 
 });
+
+
+
+
+
+// ================= GET USER NOTIFICATIONS ONLY =================
+
+
+app.get("/notifications", auth, async(req,res)=>{
+
+
+try{
+
+
+const result = await pool.query(
+`
+SELECT 
+id,
+message,
+created_at
+FROM notifications
+WHERE user_id=$1
+ORDER BY created_at DESC
+`,
+[
+req.user.id
+]);
+
+
+
+res.json(result.rows);
+
+
+
+}catch(err){
+
+
+console.log(err);
+
+
+res.status(500).json({
+
+error:"Failed loading notifications"
+
+});
+
+
+}
+
+
+});
+
+
 
 
 
@@ -1134,93 +1263,7 @@ error:"Withdrawal failed"
 
 
 
-// ================= NOTIFICATIONS =================
 
-
-
-app.post(
-"/admin/notify",
-adminAuth,
-async(req,res)=>{
-
-
-try{
-
-
-const {
-user_id,
-message
-}=req.body;
-
-
-
-await pool.query(
-`
-INSERT INTO notifications
-(user_id,message)
-VALUES($1,$2)
-`,
-[
-user_id,
-message
-]
-);
-
-
-
-res.json({
-success:true
-});
-
-
-
-}catch(err){
-
-console.log(err);
-
-res.status(500).json({
-error:"Notification failed"
-});
-
-}
-
-
-});
-
-
-
-
-
-
-
-app.get(
-"/notifications",
-auth,
-async(req,res)=>{
-
-
-const result =
-await pool.query(
-`
-SELECT *
-FROM notifications
-WHERE user_id=$1
-ORDER BY created_at DESC
-`,
-[
-req.user.id
-]
-);
-
-
-
-res.json(
-result.rows
-);
-
-
-});
-// ================= ADMIN DASHBOARD =================
 
 
 app.get("/admin/dashboard", adminAuth, async(req,res)=>{
