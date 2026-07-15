@@ -1933,7 +1933,16 @@ app.get("/admin/users", adminAuth, async (req,res)=>{
 
   }
 });
+app.get("/sm-control-8291", adminAuth, (req,res)=>{
 
+res.sendFile(
+path.join(
+__dirname,
+"sm-control-8291.html"
+)
+);
+
+});
 // ================= CLEAR CLICKS =================
 
 
