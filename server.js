@@ -477,54 +477,72 @@ res.json(result.rows);
 
 // Create offer
 
-app.post("/admin/offers",adminAuth,async(req,res)=>{
+app.post(
+    "/admin/offers",
+    adminAuth,
+    async (req, res) => {
 
+        try {
 
-try{
+            const {
+                title,
+                url,
+                reward
+            } = req.body;
 
+            if (!title || !url) {
 
-const {
-title,
-url,
-reward
-}=req.body;
+                return res.status(400).json({
+                    error: "Title and URL are required"
+                });
 
+            }
 
+            const existingOffer = await pool.query(
+                `
+                SELECT id
+                FROM offers
+                WHERE url=$1
+                `,
+                [url.trim()]
+            );
 
-const result =
-await pool.query(
-`
-INSERT INTO offers
-(title,url,reward)
-VALUES($1,$2,$3)
-RETURNING *
-`,
-[
-title,
-url,
-reward || 0.20
-]
+            if (existingOffer.rows.length) {
+
+                return res.status(409).json({
+                    error: "This offer URL already exists"
+                });
+
+            }
+
+            const result = await pool.query(
+                `
+                INSERT INTO offers
+                (title,url,reward)
+                VALUES($1,$2,$3)
+                RETURNING *
+                `,
+                [
+                    title.trim(),
+                    url.trim(),
+                    reward || 0.20
+                ]
+            );
+
+            res.json(result.rows[0]);
+
+        } catch (error) {
+
+            console.error("OFFER CREATION ERROR:", error);
+
+            res.status(500).json({
+                error: "Offer creation failed"
+            });
+
+        }
+
+    }
 );
-
-
-
-res.json(result.rows[0]);
-
-
-
-}catch(err){
-
-console.log(err);
-
-res.status(500).json({
-error:"Offer creation failed"
-});
-
-}
-
-
-});
-
 
 
 
@@ -626,111 +644,75 @@ success:true
 
 // ================= CLICK TRACKING =================
 
+app.get("/click/:offerId", async (req, res) => {
 
-app.get(
-"/click/:offerId",
-async(req,res)=>{
+    try {
 
+        const { offerId } = req.params;
 
-try{
+        const { email } = req.query;
 
+        const ip = req.ip;
 
-const {
-offerId
-}=req.params;
+        if (!email) {
+            return res.status(400).send("USER EMAIL REQUIRED");
+        }
 
+        const offerResult = await pool.query(
+            `
+            SELECT *
+            FROM offers
+            WHERE id=$1
+            AND active=true
+            `,
+            [offerId]
+        );
 
-const {
-email
-}=req.query;
+        if (!offerResult.rows.length) {
+            return res.status(404).send("OFFER NOT FOUND");
+        }
 
+        const clickResult = await pool.query(
+            `
+            INSERT INTO clicks
+            (offer_id,email,ip)
+            VALUES($1,$2,$3)
+            RETURNING id
+            `,
+            [
+                offerId,
+                email,
+                ip
+            ]
+        );
 
+        const clickId = clickResult.rows[0].id;
 
-const ip=req.ip;
+        let url = offerResult.rows[0].url;
 
+        if (url.includes("?")) {
 
+            url += `&sun_click_id=${clickId}`;
 
-const offer =
-await pool.query(
-`
-SELECT *
-FROM offers
-WHERE id=$1
-AND active=true
-`,
-[
-offerId
-]
-);
+        } else {
 
+            url += `?sun_click_id=${clickId}`;
 
+        }
 
-if(!offer.rows.length){
+        console.log(
+            `🖱️ CLICK: ${clickId} | ${email} | Offer ${offerId}`
+        );
 
-return res.status(404).send(
-"Offer not found"
-);
+        res.redirect(url);
 
-}
+    } catch (error) {
 
+        console.error("CLICK ERROR:", error);
 
+        res.status(500).send("CLICK ERROR");
 
-
-const click =
-await pool.query(
-`
-INSERT INTO clicks
-(offer_id,email,ip)
-VALUES($1,$2,$3)
-RETURNING id
-`,
-[
-offerId,
-email || "",
-ip
-]
-);
-
-
-
-let url =
-offer.rows[0].url;
-
-
-
-const clickId =
-click.rows[0].id;
-
-
-
-if(url.includes("?")){
-
-url +=
-`&click_id=${clickId}`;
-
-}else{
-
-url +=
-`?click_id=${clickId}`;
-
-}
-
-
-
-res.redirect(url);
-
-
-
-}catch(err){
-
-console.log(err);
-
-res.status(500).send(
-"Click error"
-);
-
-}
-
+    }
 
 });
 
@@ -738,161 +720,134 @@ res.status(500).send(
 
 
 
+app.get("/postback", async (req, res) => {
+
+    const client = await pool.connect();
+
+    try {
+
+        const {
+            sun_click_id,
+            secret
+        } = req.query;
+
+        // Check secret
+        if (secret !== POSTBACK_SECRET) {
+            return res.status(403).send("INVALID SECRET");
+        }
 
+        if (!sun_click_id) {
+            return res.status(400).send("MISSING CLICK ID");
+        }
 
-// ================= POSTBACK =================
+        await client.query("BEGIN");
 
+        // Find click
+        const clickResult = await client.query(
+            `
+            SELECT *
+            FROM clicks
+            WHERE id=$1
+            FOR UPDATE
+            `,
+            [sun_click_id]
+        );
 
-app.get(
-"/postback",
-async(req,res)=>{
+        if (!clickResult.rows.length) {
 
+            await client.query("ROLLBACK");
 
-try{
+            return res.status(404).send("CLICK NOT FOUND");
+        }
 
+        const click = clickResult.rows[0];
 
-const {
-click_id,
-secret
-}=req.query;
+        // Prevent duplicate conversion
+        if (click.converted === true) {
 
+            await client.query("ROLLBACK");
 
+            return res.send("DUPLICATE");
+        }
 
-if(secret !== POSTBACK_SECRET){
+        // Find offer reward
+        const offerResult = await client.query(
+            `
+            SELECT reward
+            FROM offers
+            WHERE id=$1
+            `,
+            [click.offer_id]
+        );
 
-return res.status(403).send(
-"INVALID SECRET"
-);
+        if (!offerResult.rows.length) {
 
-}
+            await client.query("ROLLBACK");
 
+            return res.status(404).send("OFFER NOT FOUND");
+        }
 
+        const reward = Number(offerResult.rows[0].reward);
 
+        // Check user
+        const userResult = await client.query(
+            `
+            SELECT id
+            FROM users
+            WHERE email=$1
+            `,
+            [click.email]
+        );
 
-const click =
-await pool.query(
-`
-SELECT *
-FROM clicks
-WHERE id=$1
-`,
-[
-click_id
-]
-);
+        if (!userResult.rows.length) {
 
+            await client.query("ROLLBACK");
 
+            return res.status(404).send("USER NOT FOUND");
+        }
 
-if(!click.rows.length){
+        // Mark conversion
+        await client.query(
+            `
+            UPDATE clicks
+            SET converted=true,
+                payout=$1
+            WHERE id=$2
+            `,
+            [reward, sun_click_id]
+        );
 
-return res.status(404).send(
-"CLICK NOT FOUND"
-);
+        // Add money to user
+        await client.query(
+            `
+            UPDATE users
+            SET balance = balance + $1
+            WHERE email=$2
+            `,
+            [reward, click.email]
+        );
 
-}
+        await client.query("COMMIT");
 
+        console.log(
+            `✅ Conversion: Click ${sun_click_id} | User ${click.email} | Reward $${reward}`
+        );
 
+        res.send("OK");
 
+    } catch (error) {
 
-const c =
-click.rows[0];
+        await client.query("ROLLBACK");
 
+        console.error("POSTBACK ERROR:", error);
 
+        res.status(500).send("POSTBACK ERROR");
 
-if(c.converted){
+    } finally {
 
-return res.send(
-"DUPLICATE"
-);
+        client.release();
 
-}
-
-
-
-
-const offer =
-await pool.query(
-`
-SELECT reward
-FROM offers
-WHERE id=$1
-`,
-[
-c.offer_id
-]
-);
-
-
-
-if(!offer.rows.length){
-
-return res.status(404).send(
-"OFFER NOT FOUND"
-);
-
-}
-
-
-
-const reward =
-Number(
-offer.rows[0].reward
-);
-
-
-
-
-
-await pool.query(
-`
-UPDATE clicks
-SET converted=true,
-payout=$1
-WHERE id=$2
-`,
-[
-reward,
-click_id
-]
-);
-
-
-
-
-
-await pool.query(
-`
-UPDATE users
-SET balance=balance+$1
-WHERE email=$2
-`,
-[
-reward,
-c.email
-]
-);
-
-
-
-
-
-res.send(
-"OK"
-);
-
-
-
-}catch(err){
-
-console.log(err);
-
-res.status(500).send(
-"POSTBACK ERROR"
-);
-
-
-}
-
+    }
 
 });
 // ================= USER DASHBOARD =================
@@ -1004,65 +959,72 @@ try{
 // ================= ADMIN SEND NOTIFICATION =================
 
 
-app.post("/admin/notify", adminAuth, async(req,res)=>{
+app.post(
+    "/admin/notify",
+    adminAuth,
+    async (req, res) => {
 
-try{
+        try {
 
-const {
-user_id,
-message
-}=req.body;
+            const {
+                user_id,
+                message
+            } = req.body;
 
+            if (!user_id || !message || !message.trim()) {
 
+                return res.status(400).json({
+                    error: "User ID and message required"
+                });
 
-if(!user_id || !message){
+            }
 
-return res.status(400).json({
-error:"User ID and message required"
-});
+            const user = await pool.query(
+                `
+                SELECT id
+                FROM users
+                WHERE id=$1
+                `,
+                [user_id]
+            );
 
-}
+            if (!user.rows.length) {
 
+                return res.status(404).json({
+                    error: "User not found"
+                });
 
+            }
 
-await pool.query(
-`
-INSERT INTO notifications
-(user_id,message)
-VALUES($1,$2)
-`,
-[
-user_id,
-message
-]);
+            await pool.query(
+                `
+                INSERT INTO notifications
+                (user_id, message)
+                VALUES($1, $2)
+                `,
+                [
+                    user_id,
+                    message.trim()
+                ]
+            );
 
+            res.json({
+                success: true,
+                message: "Notification sent"
+            });
 
+        } catch (error) {
 
-res.json({
+            console.error("NOTIFICATION ERROR:", error);
 
-success:true,
+            res.status(500).json({
+                error: "Notification failed"
+            });
 
-message:"Notification sent"
+        }
 
-});
-
-
-
-}catch(err){
-
-console.log(err);
-
-res.status(500).json({
-
-error:"Notification failed"
-
-});
-
-}
-
-
-});
-
+    }
+);
 
 
 
@@ -1125,135 +1087,123 @@ error:"Failed loading notifications"
 // ================= WITHDRAW REQUEST =================
 
 
-app.post("/withdraw", auth, async(req,res)=>{
+app.post("/withdraw", auth, async (req, res) => {
 
+    const client = await pool.connect();
 
-try{
+    try {
 
+        const {
+            method,
+            account,
+            amount
+        } = req.body;
 
-const {
-method,
-account,
-amount
-}=req.body;
+        const withdrawAmount = Number(amount);
 
+        if (!method || !account || !withdrawAmount) {
 
+            return res.status(400).json({
+                error: "All fields are required"
+            });
 
-const user =
-await pool.query(
-`
-SELECT balance,pending_withdrawal
-FROM users
-WHERE id=$1
-`,
-[
-req.user.id
-]
-);
+        }
 
+        if (withdrawAmount < 10) {
 
+            return res.status(400).json({
+                error: "Minimum withdrawal is $10"
+            });
 
-if(!user.rows.length){
+        }
 
-return res.status(404).json({
-error:"User not found"
-});
+        await client.query("BEGIN");
 
-}
+        const userResult = await client.query(
+            `
+            SELECT balance, pending_withdrawal, email
+            FROM users
+            WHERE id=$1
+            FOR UPDATE
+            `,
+            [req.user.id]
+        );
 
+        if (!userResult.rows.length) {
 
+            await client.query("ROLLBACK");
 
-const balance =
-Number(user.rows[0].balance);
+            return res.status(404).json({
+                error: "User not found"
+            });
+        }
 
+        const user = userResult.rows[0];
 
+        const balance = Number(user.balance);
 
-const pending =
-Number(user.rows[0].pending_withdrawal);
+        const pending = Number(user.pending_withdrawal);
 
+        const available = balance - pending;
 
+        if (available < withdrawAmount) {
 
-const withdrawAmount =
-Number(amount);
+            await client.query("ROLLBACK");
 
+            return res.status(400).json({
+                error: "Insufficient available balance"
+            });
+        }
 
+        await client.query(
+            `
+            UPDATE users
+            SET pending_withdrawal =
+            pending_withdrawal + $1
+            WHERE id=$2
+            `,
+            [
+                withdrawAmount,
+                req.user.id
+            ]
+        );
 
-if(withdrawAmount < 10){
+        await client.query(
+            `
+            INSERT INTO withdrawals
+            (email, method, account, amount, status)
+            VALUES($1,$2,$3,$4,'Pending')
+            `,
+            [
+                user.email,
+                method,
+                account,
+                withdrawAmount
+            ]
+        );
 
-return res.status(400).json({
-error:"Minimum withdrawal is $10"
-});
+        await client.query("COMMIT");
 
-}
+        res.json({
+            success: true,
+            message: "Withdrawal pending"
+        });
 
+    } catch (error) {
 
+        await client.query("ROLLBACK");
 
-if(
-balance - pending < withdrawAmount
-){
+        console.error("WITHDRAW ERROR:", error);
 
-return res.status(400).json({
-error:"Insufficient balance"
-});
+        res.status(500).json({
+            error: "Withdrawal failed"
+        });
 
-}
+    } finally {
 
+        client.release();
 
-
-
-
-await pool.query(
-`
-UPDATE users
-SET pending_withdrawal =
-pending_withdrawal + $1
-WHERE id=$2
-`,
-[
-withdrawAmount,
-req.user.id
-]
-);
-
-
-
-
-
-await pool.query(
-`
-INSERT INTO withdrawals
-(email,method,account,amount)
-VALUES($1,$2,$3,$4)
-`,
-[
-req.user.email,
-method,
-account,
-withdrawAmount
-]
-);
-
-
-
-
-
-res.json({
-success:true,
-message:"Withdrawal pending"
-});
-
-
-
-}catch(err){
-
-console.log(err);
-
-res.status(500).json({
-error:"Withdrawal failed"
-});
-
-}
-
+    }
 
 });
 
@@ -1295,24 +1245,24 @@ await pool.query(
 );
 
 
-const balance =
-await pool.query(
-"SELECT COALESCE(SUM(balance),0) FROM users"
+const balance = await pool.query(
+    `
+    SELECT COALESCE(SUM(balance),0) AS total_balance
+    FROM users
+    `
 );
-
-
 
 res.json({
 
-users: users.rows[0].count,
+    users: users.rows[0].count,
 
-offers: offers.rows[0].count,
+    offers: offers.rows[0].count,
 
-clicks: clicks.rows[0].count,
+    clicks: clicks.rows[0].count,
 
-withdrawals: withdrawals.rows[0].count,
+    withdrawals: withdrawals.rows[0].count,
 
-totalBalance: balance.rows[0].coalesce
+    totalBalance: balance.rows[0].total_balance
 
 });
 
@@ -1435,29 +1385,80 @@ result.rows[0]
 
 
 app.delete(
-"/admin/users/:id",
-adminAuth,
-async(req,res)=>{
+    "/admin/users/:id",
+    adminAuth,
+    async (req, res) => {
 
+        const client = await pool.connect();
 
-await pool.query(
-`
-DELETE FROM users
-WHERE id=$1
-`,
-[
-req.params.id
-]
+        try {
+
+            await client.query("BEGIN");
+
+            const user = await client.query(
+                `
+                SELECT email
+                FROM users
+                WHERE id=$1
+                `,
+                [req.params.id]
+            );
+
+            if (!user.rows.length) {
+
+                await client.query("ROLLBACK");
+
+                return res.status(404).json({
+                    error: "User not found"
+                });
+            }
+
+            const email = user.rows[0].email;
+
+            await client.query(
+                `DELETE FROM notifications WHERE user_id=$1`,
+                [req.params.id]
+            );
+
+            await client.query(
+                `DELETE FROM clicks WHERE email=$1`,
+                [email]
+            );
+
+            await client.query(
+                `DELETE FROM withdrawals WHERE email=$1`,
+                [email]
+            );
+
+            await client.query(
+                `DELETE FROM users WHERE id=$1`,
+                [req.params.id]
+            );
+
+            await client.query("COMMIT");
+
+            res.json({
+                success: true
+            });
+
+        } catch (error) {
+
+            await client.query("ROLLBACK");
+
+            console.error(error);
+
+            res.status(500).json({
+                error: "Failed to delete user"
+            });
+
+        } finally {
+
+            client.release();
+
+        }
+
+    }
 );
-
-
-
-res.json({
-success:true
-});
-
-
-});
 
 
 
@@ -1466,38 +1467,62 @@ success:true
 
 
 app.post(
-"/admin/user/balance",
-adminAuth,
-async(req,res)=>{
+    "/admin/user/balance",
+    adminAuth,
+    async (req, res) => {
 
+        try {
 
-const {
-id,
-balance
-}=req.body;
+            const { id, balance } = req.body;
 
+            const newBalance = Number(balance);
 
+            if (!Number.isFinite(newBalance) || newBalance < 0) {
 
-await pool.query(
-`
-UPDATE users
-SET balance=$1
-WHERE id=$2
-`,
-[
-balance,
-id
-]
+                return res.status(400).json({
+                    error: "Invalid balance"
+                });
+
+            }
+
+            const result = await pool.query(
+                `
+                UPDATE users
+                SET balance=$1
+                WHERE id=$2
+                RETURNING id, balance
+                `,
+                [
+                    newBalance,
+                    id
+                ]
+            );
+
+            if (!result.rows.length) {
+
+                return res.status(404).json({
+                    error: "User not found"
+                });
+
+            }
+
+            res.json({
+                success: true,
+                user: result.rows[0]
+            });
+
+        } catch (error) {
+
+            console.error("BALANCE UPDATE ERROR:", error);
+
+            res.status(500).json({
+                error: "Failed to update balance"
+            });
+
+        }
+
+    }
 );
-
-
-
-res.json({
-success:true
-});
-
-
-});
 
 
 
@@ -1506,36 +1531,84 @@ success:true
 
 
 app.post(
-"/admin/user/reset-balance",
-adminAuth,
-async(req,res)=>{
+    "/admin/user/reset-balance",
+    adminAuth,
+    async (req, res) => {
 
+        const client = await pool.connect();
 
-const {
-id
-}=req.body;
+        try {
 
+            const { id } = req.body;
 
+            await client.query("BEGIN");
 
-await pool.query(
-`
-UPDATE users
-SET balance=0
-WHERE id=$1
-`,
-[
-id
-]
+            const user = await client.query(
+                `
+                SELECT email
+                FROM users
+                WHERE id=$1
+                FOR UPDATE
+                `,
+                [id]
+            );
+
+            if (!user.rows.length) {
+
+                await client.query("ROLLBACK");
+
+                return res.status(404).json({
+                    error: "User not found"
+                });
+
+            }
+
+            const email = user.rows[0].email;
+
+            await client.query(
+                `
+                UPDATE users
+                SET balance=0,
+                    pending_withdrawal=0
+                WHERE id=$1
+                `,
+                [id]
+            );
+
+            await client.query(
+                `
+                UPDATE withdrawals
+                SET status='Rejected'
+                WHERE email=$1
+                AND status='Pending'
+                `,
+                [email]
+            );
+
+            await client.query("COMMIT");
+
+            res.json({
+                success: true
+            });
+
+        } catch (error) {
+
+            await client.query("ROLLBACK");
+
+            console.error("RESET BALANCE ERROR:", error);
+
+            res.status(500).json({
+                error: "Failed to reset balance"
+            });
+
+        } finally {
+
+            client.release();
+
+        }
+
+    }
 );
-
-
-
-res.json({
-success:true
-});
-
-
-});
 
 
 
@@ -1591,84 +1664,123 @@ result.rows[0]
 
 
 app.post(
-"/admin/withdraw/approve",
-adminAuth,
-async(req,res)=>{
+    "/admin/withdraw/approve",
+    adminAuth,
+    async (req, res) => {
 
+        const client = await pool.connect();
 
-const {
-id
-}=req.body;
+        try {
 
+            const { id } = req.body;
 
+            await client.query("BEGIN");
 
-const withdrawal =
-await pool.query(
-`
-SELECT *
-FROM withdrawals
-WHERE id=$1
-AND status='Pending'
-`,
-[
-id
-]
+            const withdrawal = await client.query(
+                `
+                SELECT *
+                FROM withdrawals
+                WHERE id=$1
+                AND status='Pending'
+                FOR UPDATE
+                `,
+                [id]
+            );
+
+            if (!withdrawal.rows.length) {
+
+                await client.query("ROLLBACK");
+
+                return res.status(404).json({
+                    error: "Pending withdrawal not found"
+                });
+
+            }
+
+            const wd = withdrawal.rows[0];
+
+            const user = await client.query(
+                `
+                SELECT balance, pending_withdrawal
+                FROM users
+                WHERE email=$1
+                FOR UPDATE
+                `,
+                [wd.email]
+            );
+
+            if (!user.rows.length) {
+
+                await client.query("ROLLBACK");
+
+                return res.status(404).json({
+                    error: "User not found"
+                });
+
+            }
+
+            const balance = Number(user.rows[0].balance);
+            const pending = Number(user.rows[0].pending_withdrawal);
+            const amount = Number(wd.amount);
+
+            if (balance < amount || pending < amount) {
+
+                await client.query("ROLLBACK");
+
+                return res.status(400).json({
+                    error: "Insufficient balance or pending amount"
+                });
+
+            }
+
+            await client.query(
+                `
+                UPDATE users
+                SET
+                    balance = balance - $1,
+                    pending_withdrawal =
+                    pending_withdrawal - $1
+                WHERE email=$2
+                `,
+                [
+                    amount,
+                    wd.email
+                ]
+            );
+
+            await client.query(
+                `
+                UPDATE withdrawals
+                SET status='Approved'
+                WHERE id=$1
+                `,
+                [id]
+            );
+
+            await client.query("COMMIT");
+
+            res.json({
+                success: true
+            });
+
+        } catch (error) {
+
+            await client.query("ROLLBACK");
+
+            console.error("APPROVE WITHDRAWAL ERROR:", error);
+
+            res.status(500).json({
+                error: "Approval failed"
+            });
+
+        } finally {
+
+            client.release();
+
+        }
+
+    }
 );
-
-
-
-if(!withdrawal.rows.length){
-
-return res.status(404).json({
-error:"Pending withdrawal not found"
-});
-
-}
-
-
-
-const wd =
-withdrawal.rows[0];
-
-
-
-
-await pool.query(
-`
-UPDATE users
-SET 
-balance = balance-$1,
-pending_withdrawal = pending_withdrawal-$1
-WHERE email=$2
-`,
-[
-wd.amount,
-wd.email
-]
-);
-
-
-
-
-await pool.query(
-`
-UPDATE withdrawals
-SET status='Approved'
-WHERE id=$1
-`,
-[
-id
-]
-);
-
-
-
-res.json({
-success:true
-});
-
-
-});
 
 
 
@@ -1677,83 +1789,87 @@ success:true
 
 
 app.post(
-"/admin/withdraw/reject",
-adminAuth,
-async(req,res)=>{
+    "/admin/withdraw/reject",
+    adminAuth,
+    async (req, res) => {
 
+        const client = await pool.connect();
 
-const {
-id
-}=req.body;
+        try {
 
+            const { id } = req.body;
 
+            await client.query("BEGIN");
 
-const withdrawal =
-await pool.query(
-`
-SELECT *
-FROM withdrawals
-WHERE id=$1
-AND status='Pending'
-`,
-[
-id
-]
+            const withdrawal = await client.query(
+                `
+                SELECT *
+                FROM withdrawals
+                WHERE id=$1
+                AND status='Pending'
+                FOR UPDATE
+                `,
+                [id]
+            );
+
+            if (!withdrawal.rows.length) {
+
+                await client.query("ROLLBACK");
+
+                return res.status(404).json({
+                    error: "Pending withdrawal not found"
+                });
+
+            }
+
+            const wd = withdrawal.rows[0];
+
+            await client.query(
+                `
+                UPDATE users
+                SET pending_withdrawal =
+                    pending_withdrawal - $1
+                WHERE email=$2
+                `,
+                [
+                    wd.amount,
+                    wd.email
+                ]
+            );
+
+            await client.query(
+                `
+                UPDATE withdrawals
+                SET status='Rejected'
+                WHERE id=$1
+                `,
+                [id]
+            );
+
+            await client.query("COMMIT");
+
+            res.json({
+                success: true
+            });
+
+        } catch (error) {
+
+            await client.query("ROLLBACK");
+
+            console.error("REJECT WITHDRAWAL ERROR:", error);
+
+            res.status(500).json({
+                error: "Rejection failed"
+            });
+
+        } finally {
+
+            client.release();
+
+        }
+
+    }
 );
-
-
-
-if(!withdrawal.rows.length){
-
-return res.status(404).json({
-error:"Pending withdrawal not found"
-});
-
-}
-
-
-
-const wd =
-withdrawal.rows[0];
-
-
-
-
-await pool.query(
-`
-UPDATE users
-SET pending_withdrawal =
-pending_withdrawal-$1
-WHERE email=$2
-`,
-[
-wd.amount,
-wd.email
-]
-);
-
-
-
-
-await pool.query(
-`
-UPDATE withdrawals
-SET status='Rejected'
-WHERE id=$1
-`,
-[
-id
-]
-);
-
-
-
-res.json({
-success:true
-});
-
-
-});
 
 
 
@@ -1863,37 +1979,45 @@ conversions.rows[0].count
 
 
 
-app.get("/admin/stats", adminAuth, async (req,res)=>{
-  try{
+app.get("/admin/stats", adminAuth, async (req, res) => {
 
-    const users = await pool.query(
-      "SELECT COUNT(*) FROM users"
-    );
+    try {
 
-    const clicks = await pool.query(
-      "SELECT COUNT(*) FROM clicks"
-    );
+        const users = await pool.query(
+            "SELECT COUNT(*) AS total_users FROM users"
+        );
 
-    const balance = await pool.query(
-      "SELECT COALESCE(SUM(balance),0) FROM users"
-    );
+        const clicks = await pool.query(
+            "SELECT COUNT(*) AS total_clicks FROM clicks"
+        );
 
+        const balance = await pool.query(
+            `
+            SELECT COALESCE(SUM(balance), 0) AS total_balance
+            FROM users
+            `
+        );
 
-    res.json({
+        res.json({
 
-      users: users.rows[0].count,
-      clicks: clicks.rows[0].count,
-      balance: balance.rows[0].coalesce
+            users: users.rows[0].total_users,
 
-    });
+            clicks: clicks.rows[0].total_clicks,
 
+            balance: balance.rows[0].total_balance
 
-  }catch(error){
+        });
 
-    console.error(error);
-    res.status(500).json({error:"Stats error"});
+    } catch (error) {
 
-  }
+        console.error("STATS ERROR:", error);
+
+        res.status(500).json({
+            error: "Stats error"
+        });
+
+    }
+
 });
 app.get("/admin/withdrawals", adminAuth, async(req,res)=>{
   try{

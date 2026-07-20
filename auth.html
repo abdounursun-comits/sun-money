@@ -1,11 +1,21 @@
 <!DOCTYPE html>
+
 <html>
+
 <head>
+
 <meta charset="UTF-8">
+
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- Clickaine website verification -->
+
+<meta name="clickaine-site-verification" content="4a9ad8e6325100d80565f4b54e935184f314f9dbfe29d0286739ba6d6a1546bf0c5c5a1b1330b4bfba4845fb3ed85ac6cdc1aa8a1228e5fa3f4d15805282cfb2">
+
 <title>Sun Money Auth</title>
 
 <style>
+
 body{
     font-family:Arial,sans-serif;
     background:#f5f5f5;
@@ -69,90 +79,90 @@ button:hover{
     margin-top:10px;
     color:red;
 }
+
 </style>
 
 </head>
+
 <body>
 
 <div class="box">
 
-    <!-- LOGIN -->
+```
+<div id="loginBox">
 
-    <div id="loginBox">
+    <h2>Login</h2>
 
-        <h2>Login</h2>
+    <input
+        type="email"
+        id="loginEmail"
+        placeholder="Email"
+    >
 
-        <input
-            type="email"
-            id="loginEmail"
-            placeholder="Email"
-        >
+    <input
+        type="password"
+        id="loginPassword"
+        placeholder="Password"
+    >
 
-        <input
-            type="password"
-            id="loginPassword"
-            placeholder="Password"
-        >
+    <button onclick="login()">
+        Login
+    </button>
 
-        <button onclick="login()">
-            Login
-        </button>
+    <p class="msg" id="loginMsg"></p>
 
-        <p class="msg" id="loginMsg"></p>
-
-        <div
-            class="switch"
-            onclick="showRegister()"
-        >
-            Don't have an account? Register
-        </div>
-
+    <div
+        class="switch"
+        onclick="showRegister()"
+    >
+        Don't have an account? Register
     </div>
 
-    <!-- REGISTER -->
+</div>
 
-    <div id="registerBox" class="hidden">
+<div id="registerBox" class="hidden">
 
-        <h2>Register</h2>
+    <h2>Register</h2>
 
-        <input
-            type="text"
-            id="username"
-            placeholder="Username"
-        >
+    <input
+        type="text"
+        id="username"
+        placeholder="Username"
+    >
 
-        <input
-            type="email"
-            id="email"
-            placeholder="Email"
-        >
+    <input
+        type="email"
+        id="email"
+        placeholder="Email"
+    >
 
-        <input
-            type="text"
-            id="mobile"
-            placeholder="Mobile Number"
-        >
+    <input
+        type="text"
+        id="mobile"
+        placeholder="Mobile Number"
+    >
 
-        <input
-            type="password"
-            id="password"
-            placeholder="Password"
-        >
+    <input
+        type="password"
+        id="password"
+        placeholder="Password"
+    >
 
-        <button onclick="register()">
-            Register
-        </button>
+    <button onclick="register()">
+        Register
+    </button>
 
-        <p class="msg" id="regMsg"></p>
+    <p class="msg" id="regMsg"></p>
 
-        <div
-            class="switch"
-            onclick="showLogin()"
-        >
-            Already have an account? Login
-        </div>
-
+    <div
+        class="switch"
+        onclick="showLogin()"
+    >
+        Already have an account? Login
     </div>
+
+</div>
+```
 
 </div>
 
@@ -160,110 +170,205 @@ button:hover{
 
 const API = "https://sun-money.onrender.com";
 
-// ===================== SWITCH =====================
-
 function showRegister(){
-    document.getElementById("loginBox").classList.add("hidden");
-    document.getElementById("registerBox").classList.remove("hidden");
+
+    document
+    .getElementById("loginBox")
+    .classList
+    .add("hidden");
+
+    document
+    .getElementById("registerBox")
+    .classList
+    .remove("hidden");
+
 }
 
 function showLogin(){
-    document.getElementById("registerBox").classList.add("hidden");
-    document.getElementById("loginBox").classList.remove("hidden");
-}
 
-// ===================== REGISTER =====================
+    document
+    .getElementById("registerBox")
+    .classList
+    .add("hidden");
+
+    document
+    .getElementById("loginBox")
+    .classList
+    .remove("hidden");
+
+}
 
 async function register(){
 
     try{
 
         const res = await fetch(API + "/register",{
+
             method:"POST",
+
             headers:{
                 "Content-Type":"application/json"
             },
+
             body:JSON.stringify({
-                username:document.getElementById("username").value,
-                email:document.getElementById("email").value,
-                mobile:document.getElementById("mobile").value,
-                password:document.getElementById("password").value
+
+                username:
+                document
+                .getElementById("username")
+                .value,
+
+                email:
+                document
+                .getElementById("email")
+                .value,
+
+                mobile:
+                document
+                .getElementById("mobile")
+                .value,
+
+                password:
+                document
+                .getElementById("password")
+                .value
+
             })
+
         });
 
         const data = await res.json();
 
         if(data.success){
 
-            document.getElementById("regMsg").style.color = "green";
-            document.getElementById("regMsg").innerText =
-                "Registration successful. Please login.";
+            document
+            .getElementById("regMsg")
+            .style
+            .color = "green";
+
+            document
+            .getElementById("regMsg")
+            .innerText =
+            "Registration successful. Please login.";
 
             setTimeout(() => {
+
                 showLogin();
-            }, 1000);
+
+            },1000);
 
         }else{
 
-            document.getElementById("regMsg").style.color = "red";
-            document.getElementById("regMsg").innerText =
-                data.error || "Registration failed";
+            document
+            .getElementById("regMsg")
+            .style
+            .color = "red";
+
+            document
+            .getElementById("regMsg")
+            .innerText =
+            data.error ||
+            "Registration failed";
+
         }
 
     }catch(err){
 
         console.error(err);
 
-        document.getElementById("regMsg").innerText =
-            "Cannot connect to server";
-    }
-}
+        document
+        .getElementById("regMsg")
+        .innerText =
+        "Cannot connect to server";
 
-// ===================== LOGIN =====================
+    }
+
+}
 
 async function login(){
 
     try{
 
         const res = await fetch(API + "/login",{
+
             method:"POST",
+
             headers:{
                 "Content-Type":"application/json"
             },
+
             body:JSON.stringify({
-                email:document.getElementById("loginEmail").value,
-                password:document.getElementById("loginPassword").value
+
+                email:
+                document
+                .getElementById("loginEmail")
+                .value,
+
+                password:
+                document
+                .getElementById("loginPassword")
+                .value
+
             })
+
         });
 
         const data = await res.json();
 
         if(data.success){
 
-            localStorage.setItem("token", data.token);
-            localStorage.setItem("userId", data.user.id);
-            localStorage.setItem("email", data.user.email);
-            localStorage.setItem("username", data.user.username);
-            localStorage.setItem("balance", data.user.balance);
+            localStorage.setItem(
+                "token",
+                data.token
+            );
 
-            window.location.href = "dashboard.html";
+            localStorage.setItem(
+                "userId",
+                data.user.id
+            );
+
+            localStorage.setItem(
+                "email",
+                data.user.email
+            );
+
+            localStorage.setItem(
+                "username",
+                data.user.username
+            );
+
+            localStorage.setItem(
+                "balance",
+                data.user.balance
+            );
+
+            window.location.href =
+            "dashboard.html";
 
         }else{
 
-            document.getElementById("loginMsg").innerText =
-                data.error || "Login failed";
+            document
+            .getElementById("loginMsg")
+            .innerText =
+            data.error ||
+            "Login failed";
+
         }
 
     }catch(err){
 
         console.error(err);
 
-        document.getElementById("loginMsg").innerText =
-            "Cannot connect to server";
+        document
+        .getElementById("loginMsg")
+        .innerText =
+        "Cannot connect to server";
+
     }
+
 }
 
 </script>
 
 </body>
+
 </html>
