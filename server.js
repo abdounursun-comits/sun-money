@@ -1077,7 +1077,97 @@ error:"Failed loading notifications"
 });
 
 
+app.get("/offerwall/postback", async (req, res) => {
 
+    const client = await pool.connect();
+
+    try {
+
+        const {
+            user_id,
+            payout,
+            transaction_id
+        } = req.query;
+
+        if (!user_id || !payout || !transaction_id) {
+            return res.status(400).send("Missing parameters");
+        }
+
+        await client.query("BEGIN");
+
+        // Prevent duplicate conversion
+        const existing = await client.query(
+            `
+            SELECT id
+            FROM offerwall_conversions
+            WHERE transaction_id=$1
+            `,
+            [transaction_id]
+        );
+
+        if (existing.rows.length) {
+            await client.query("ROLLBACK");
+            return res.send("DUPLICATE");
+        }
+
+        // Find user
+        const user = await client.query(
+            `
+            SELECT id
+            FROM users
+            WHERE id=$1
+            `,
+            [user_id]
+        );
+
+        if (!user.rows.length) {
+            await client.query("ROLLBACK");
+            return res.status(404).send("USER NOT FOUND");
+        }
+
+        // Credit user
+        await client.query(
+            `
+            UPDATE users
+            SET balance = balance + $1
+            WHERE id=$2
+            `,
+            [Number(payout), user_id]
+        );
+
+        // Save conversion
+        await client.query(
+            `
+            INSERT INTO offerwall_conversions
+            (user_id, transaction_id, payout)
+            VALUES($1,$2,$3)
+            `,
+            [
+                user_id,
+                transaction_id,
+                payout
+            ]
+        );
+
+        await client.query("COMMIT");
+
+        res.send("OK");
+
+    } catch (error) {
+
+        await client.query("ROLLBACK");
+
+        console.error(error);
+
+        res.status(500).send("ERROR");
+
+    } finally {
+
+        client.release();
+
+    }
+
+});
 
 
 
