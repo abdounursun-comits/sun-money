@@ -6,7 +6,7 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const cors = require("cors");
 const path = require("path");
-
+const crypto = require("crypto");
 const app = express();
 
 const PORT = process.env.PORT || 3000;
@@ -1077,97 +1077,6 @@ error:"Failed loading notifications"
 });
 
 
-app.get("/offerwall/postback", async (req, res) => {
-
-    const client = await pool.connect();
-
-    try {
-
-        const {
-            user_id,
-            payout,
-            transaction_id
-        } = req.query;
-
-        if (!user_id || !payout || !transaction_id) {
-            return res.status(400).send("Missing parameters");
-        }
-
-        await client.query("BEGIN");
-
-        // Prevent duplicate conversion
-        const existing = await client.query(
-            `
-            SELECT id
-            FROM offerwall_conversions
-            WHERE transaction_id=$1
-            `,
-            [transaction_id]
-        );
-
-        if (existing.rows.length) {
-            await client.query("ROLLBACK");
-            return res.send("DUPLICATE");
-        }
-
-        // Find user
-        const user = await client.query(
-            `
-            SELECT id
-            FROM users
-            WHERE id=$1
-            `,
-            [user_id]
-        );
-
-        if (!user.rows.length) {
-            await client.query("ROLLBACK");
-            return res.status(404).send("USER NOT FOUND");
-        }
-
-        // Credit user
-        await client.query(
-            `
-            UPDATE users
-            SET balance = balance + $1
-            WHERE id=$2
-            `,
-            [Number(payout), user_id]
-        );
-
-        // Save conversion
-        await client.query(
-            `
-            INSERT INTO offerwall_conversions
-            (user_id, transaction_id, payout)
-            VALUES($1,$2,$3)
-            `,
-            [
-                user_id,
-                transaction_id,
-                payout
-            ]
-        );
-
-        await client.query("COMMIT");
-
-        res.send("OK");
-
-    } catch (error) {
-
-        await client.query("ROLLBACK");
-
-        console.error(error);
-
-        res.status(500).send("ERROR");
-
-    } finally {
-
-        client.release();
-
-    }
-
-});
 
 
 
@@ -2181,7 +2090,255 @@ success:true
 });
 
 
+// ================= OFFERWALL.ME =================
 
+
+
+
+// Open Offerwall.me for logged-in user
+app.get("/offerwall", auth, (req, res) => {
+
+    const userId = req.user.id;
+    const apiKey = process.env.OFFERWALL_API_KEY;
+
+    if (!apiKey) {
+        return res.status(500).json({
+            error: "Offerwall API key not configured"
+        });
+    }
+
+    const offerwallUrl =
+        `https://offerwall.me/offerwall/${apiKey}/${userId}`;
+
+    res.json({
+        success: true,
+        url: offerwallUrl
+    });
+
+});
+
+
+// Offerwall.me Postback
+app.post("/postback/offerwallme", async (req, res) => {
+
+    const client = await pool.connect();
+
+    try {
+
+        const {
+            subId,
+            transId,
+            reward,
+            offer_name,
+            offer_type,
+            payout,
+            userIp,
+            country,
+            status,
+            debug,
+            signature
+        } = req.body;
+
+
+        // Required parameters
+        if (!subId || !transId || !reward || !signature) {
+
+            return res.status(400).send(
+                "ERROR: Missing parameters"
+            );
+
+        }
+
+
+        const secret =
+            process.env.OFFERWALL_SECRET_KEY;
+
+
+        if (!secret) {
+
+            console.error(
+                "OFFERWALL_SECRET_KEY is missing"
+            );
+
+            return res.status(500).send(
+                "ERROR: Secret key not configured"
+            );
+
+        }
+
+
+        // Create expected MD5 signature
+        const expectedSignature = crypto
+            .createHash("md5")
+            .update(
+                `${subId}${transId}${reward}${secret}`
+            )
+            .digest("hex");
+
+
+        // Secure signature comparison
+        if (
+            expectedSignature.length !== signature.length ||
+            !crypto.timingSafeEqual(
+                Buffer.from(expectedSignature),
+                Buffer.from(signature)
+            )
+        ) {
+
+            return res.status(403).send(
+                "ERROR: Signature doesn't match"
+            );
+
+        }
+
+
+        // Prevent duplicate transaction
+        const existingTransaction =
+            await client.query(
+                `
+                SELECT id
+                FROM offerwall_transactions
+                WHERE transaction_id=$1
+                `,
+                [transId]
+            );
+
+
+        if (existingTransaction.rows.length > 0) {
+
+            return res.send("ok");
+
+        }
+
+
+        // Find user
+        const userResult =
+            await client.query(
+                `
+                SELECT id
+                FROM users
+                WHERE id=$1
+                `,
+                [subId]
+            );
+
+
+        if (!userResult.rows.length) {
+
+            return res.status(404).send(
+                "ERROR: User not found"
+            );
+
+        }
+
+
+        // Convert reward
+        let rewardAmount =
+            Number.parseFloat(reward);
+
+
+        if (!Number.isFinite(rewardAmount)) {
+
+            return res.status(400).send(
+                "ERROR: Invalid reward"
+            );
+
+        }
+
+
+        // Status 2 = chargeback
+        if (String(status) === "2") {
+
+            rewardAmount =
+                -Math.abs(rewardAmount);
+
+        }
+
+
+        // Begin database transaction
+        await client.query("BEGIN");
+
+
+        // Add reward to user balance
+        await client.query(
+            `
+            UPDATE users
+            SET balance = balance + $1
+            WHERE id=$2
+            `,
+            [
+                rewardAmount,
+                subId
+            ]
+        );
+
+
+        // Save transaction
+        await client.query(
+            `
+            INSERT INTO offerwall_transactions
+            (
+                user_id,
+                transaction_id,
+                offer_name,
+                offer_type,
+                reward,
+                payout,
+                user_ip,
+                country,
+                status,
+                debug
+            )
+            VALUES
+            ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+            `,
+            [
+                subId,
+                transId,
+                offer_name || null,
+                offer_type || null,
+                rewardAmount,
+                payout || 0,
+                userIp || null,
+                country || null,
+                status || null,
+                debug || null
+            ]
+        );
+
+
+        await client.query("COMMIT");
+
+
+        console.log(
+            `✅ Offerwall conversion | User: ${subId} | Reward: ${rewardAmount}`
+        );
+
+
+        return res.send("ok");
+
+
+    } catch (error) {
+
+        await client.query("ROLLBACK");
+
+        console.error(
+            "Offerwall.me postback error:",
+            error
+        );
+
+        return res.status(500).send(
+            "ERROR"
+        );
+
+    } finally {
+
+        client.release();
+
+    }
+
+});
+```
 
 
 

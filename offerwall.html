@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Offerwall - Sun Money</title>
+
+<style>
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:Arial,sans-serif;
+}
+
+body{
+    background:#f4f6f9;
+    color:#1f2937;
+}
+
+.header{
+    background:linear-gradient(135deg,#111827,#1f2937);
+    color:white;
+    padding:22px 20px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
+
+.header h1{
+    font-size:24px;
+}
+
+.back-btn{
+    background:#ffffff;
+    color:#111827;
+    border:none;
+    padding:10px 16px;
+    border-radius:8px;
+    cursor:pointer;
+    font-weight:bold;
+}
+
+.container{
+    max-width:1100px;
+    margin:30px auto;
+    padding:0 20px;
+}
+
+.balance-card{
+    background:white;
+    padding:25px;
+    border-radius:16px;
+    box-shadow:0 4px 15px rgba(0,0,0,.08);
+    margin-bottom:25px;
+}
+
+.balance-card p{
+    color:#6b7280;
+    margin-bottom:8px;
+}
+
+.balance{
+    font-size:32px;
+    font-weight:bold;
+    color:#16a34a;
+}
+
+.offerwall-card{
+    background:white;
+    border-radius:16px;
+    padding:35px 25px;
+    text-align:center;
+    box-shadow:0 4px 15px rgba(0,0,0,.08);
+}
+
+.icon{
+    font-size:55px;
+    margin-bottom:15px;
+}
+
+.offerwall-card h2{
+    margin-bottom:12px;
+}
+
+.offerwall-card p{
+    color:#6b7280;
+    line-height:1.6;
+    margin-bottom:25px;
+}
+
+.start-btn{
+    background:#16a34a;
+    color:white;
+    border:none;
+    padding:15px 30px;
+    border-radius:10px;
+    font-size:16px;
+    font-weight:bold;
+    cursor:pointer;
+    transition:.2s;
+}
+
+.start-btn:hover{
+    background:#15803d;
+    transform:translateY(-2px);
+}
+
+.loading{
+    text-align:center;
+    padding:30px;
+    color:#6b7280;
+}
+
+.error{
+    background:#fee2e2;
+    color:#991b1b;
+    padding:15px;
+    border-radius:10px;
+    display:none;
+    margin-bottom:20px;
+}
+
+@media(max-width:600px){
+
+    .header h1{
+        font-size:20px;
+    }
+
+    .balance{
+        font-size:26px;
+    }
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<header class="header">
+
+```
+<h1>Sun Money Offerwall</h1>
+
+<button class="back-btn" onclick="goDashboard()">
+    Dashboard
+</button>
+```
+
+</header>
+
+<main class="container">
+
+```
+<div id="errorBox" class="error"></div>
+
+
+<section class="balance-card">
+
+    <p>Your Current Balance</p>
+
+    <div class="balance" id="balance">
+        Loading...
+    </div>
+
+</section>
+
+
+<section class="offerwall-card">
+
+    <div class="icon">
+        💰
+    </div>
+
+    <h2>Earn Money With Offers</h2>
+
+    <p>
+        Complete available offers, surveys, apps, and other tasks
+        to earn rewards. Your earnings will be automatically added
+        to your Sun Money balance after the offer is successfully
+        completed.
+    </p>
+
+    <button
+        class="start-btn"
+        onclick="openOfferwall()">
+
+        🚀 View Available Offers
+
+    </button>
+
+</section>
+```
+
+</main>
+
+<script>
+
+const token = localStorage.getItem("token");
+
+
+// Check login
+if(!token){
+
+    window.location.href = "/auth";
+
+}
+
+
+// Load user dashboard
+async function loadUser(){
+
+    try{
+
+        const response = await fetch(
+            "/user/dashboard",
+            {
+                headers:{
+                    "Authorization":
+                    "Bearer " + token
+                }
+            }
+        );
+
+
+        if(response.status === 401 ||
+           response.status === 403){
+
+            localStorage.removeItem("token");
+
+            window.location.href = "/auth";
+
+            return;
+
+        }
+
+
+        const data = await response.json();
+
+
+        if(!response.ok){
+
+            throw new Error(
+                data.error || "Failed to load user"
+            );
+
+        }
+
+
+        document.getElementById("balance")
+        .textContent =
+        "$" + Number(
+            data.user.balance
+        ).toFixed(2);
+
+
+    }catch(error){
+
+        console.error(error);
+
+        showError(
+            "Unable to load your account information."
+        );
+
+    }
+
+}
+
+
+// Open Offerwall.me
+async function openOfferwall(){
+
+    try{
+
+        const response = await fetch(
+            "/offerwall",
+            {
+                headers:{
+                    "Authorization":
+                    "Bearer " + token
+                }
+            }
+        );
+
+
+        if(response.status === 401 ||
+           response.status === 403){
+
+            localStorage.removeItem("token");
+
+            window.location.href = "/auth";
+
+            return;
+
+        }
+
+
+        if(!response.ok){
+
+            const text =
+            await response.text();
+
+            throw new Error(text);
+
+        }
+
+
+        /*
+        Because /offerwall uses res.redirect(),
+        fetch() follows the redirect but does not
+        automatically navigate the browser.
+
+        We therefore open the endpoint directly
+        using a temporary authenticated form.
+        */
+
+        const form =
+        document.createElement("form");
+
+        form.method = "GET";
+
+        form.action = "/offerwall";
+
+        const authInput =
+        document.createElement("input");
+
+        authInput.type = "hidden";
+
+        authInput.name = "token";
+
+        authInput.value = token;
+
+        form.appendChild(authInput);
+
+        document.body.appendChild(form);
+
+        form.submit();
+
+
+    }catch(error){
+
+        console.error(error);
+
+        showError(
+            "Unable to open Offerwall.me. Please try again."
+        );
+
+    }
+
+}
+
+
+// Show error
+function showError(message){
+
+    const box =
+    document.getElementById("errorBox");
+
+    box.textContent = message;
+
+    box.style.display = "block";
+
+}
+
+
+// Dashboard
+function goDashboard(){
+
+    window.location.href =
+    "/dashboard";
+
+}
+
+
+// Load data
+loadUser();
+
+</script>
+
+</body>
+
+</html>
